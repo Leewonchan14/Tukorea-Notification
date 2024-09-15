@@ -1,0 +1,17 @@
+services:
+  crawler:
+    container_name: crawler
+    build: .
+    shm_size: '2gb'
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+
+  selenium:
+    container_name: selenium
+    image: seleniarm/standalone-chromium
+    ports:
+      - 4444:4444
