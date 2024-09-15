@@ -8,7 +8,6 @@ class ErrorManager:
         self.notification = notification
 
     def increase_error_count(self, error: Exception):
-        print(error)
         self.error_count += 1
         self.notification.send_error_message(f"에러가 발생했습니다. {error}")
 

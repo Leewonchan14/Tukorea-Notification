@@ -15,5 +15,6 @@ RUN chmod +x /entry.sh
 
 ENTRYPOINT ["/entry.sh"]
 
-CMD python3 main.py
+#CMD fastapi run
 #CMD tail -f /dev/null
+CMD python3 main.py
