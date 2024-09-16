@@ -31,7 +31,7 @@ def repeat_task():
         # 새로운 공지사항들의 Id를 가져온다.
         article_element_ids = ArticleElement.get_new_article_ids(crawler)
 
-        logger.debug("크롤링한 id : ", article_element_ids)
+        logger.debug("크롤링한 id : ", str(article_element_ids))
 
         for article_element_id in article_element_ids:
             # 만약 데이터베이스에 이미 존재하는 공지사항이라면 넘어간다.
