@@ -20,7 +20,7 @@ app = FastAPI()
 
 
 @app.on_event("startup")
-@repeat_every(seconds=30, wait_first=False)  # 30분마다 실행
+@repeat_every(seconds=60 * 5, wait_first=False)  # 30분마다 실행
 def repeat_task():
     db: Session = SessionLocal()
     crawler: Crawler = Crawler()
@@ -31,10 +31,11 @@ def repeat_task():
         # 새로운 공지사항들의 Id를 가져온다.
         article_element_ids = ArticleElement.get_new_article_ids(crawler)
 
+        logger.debug("크롤링한 id : ", article_element_ids)
+
         for article_element_id in article_element_ids:
             # 만약 데이터베이스에 이미 존재하는 공지사항이라면 넘어간다.
             if crud.find_by_id(db, article_element_id):
-                logger.debug(f"이미 저장된 공지사항입니다: {article_element_id}")
                 continue
 
             new_article_element = ArticleElement.get_article_by_id(crawler, article_element_id)
