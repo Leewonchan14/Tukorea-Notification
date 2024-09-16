@@ -18,6 +18,9 @@ article = sqlalchemy.Table(
 )
 
 engine = sqlalchemy.create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+    DATABASE_URL, connect_args={"check_same_thread": False},
+    # 로그 기록
+    # echo=True,
+    query_cache_size=0
 )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autoflush=True, expire_on_commit=True, bind=engine)

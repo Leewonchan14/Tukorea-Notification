@@ -2,9 +2,6 @@
 __pycache__/
 *.pyc
 
-# 데이터베이스 파일 무시 (필요한 경우)
-article.db
-
 # 로그 및 임시 파일 무시
 *.log
 *.tmp
