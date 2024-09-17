@@ -17,7 +17,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             sudo sh -c 'truncate -s 0 /var/lib/docker/containers/*/*-json.log'
-            cd ~/${{ secrets.REPOSITORY_NAME }}-prod
+            cd ~/${{ secrets.REPOSITORY_NAME }}
             git checkout main 
             git stash push || true
             git pull
