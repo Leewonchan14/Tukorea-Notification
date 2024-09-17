@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.webdriver.remote import webdriver as remote_webdriver
 
 
 class Crawler:
@@ -14,7 +15,7 @@ class Crawler:
             options=options,
         )
 
-    def get_driver(self):
+    def get_driver(self) -> remote_webdriver:
         return self.driver
 
     def quit(self):

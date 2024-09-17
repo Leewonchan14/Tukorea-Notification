@@ -13,6 +13,7 @@ from src.model.config import Base
 from src.notification import Notification
 from src.repeat_task.article import article_repeat_task
 from src.repeat_task.dormitory_article import dormitory_article_repeat_task
+from src.repeat_task.school_meal_menu import school_meal_menu_repeat_task
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -30,11 +31,18 @@ def repeat_task():
     error_manager: ErrorManager = ErrorManager(notification)
 
     try:
+        # 공지사항
         article_repeat_task(
             logger, db, crawler, notification
         )
 
+        # 생활관 공지사항
         dormitory_article_repeat_task(
+            logger, db, crawler, notification
+        )
+
+        # 학식 메뉴
+        school_meal_menu_repeat_task(
             logger, db, crawler, notification
         )
 
