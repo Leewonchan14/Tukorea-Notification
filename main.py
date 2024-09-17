@@ -33,6 +33,9 @@ def repeat_task():
 
         logger.debug(f"크롤링한 id : {str(article_element_ids)}")
 
+        # 새로운 공지사항들의 Id를 역순으로 정렬한다. (가장 아래의 공지사항부터 처리하기 위함)
+        article_element_ids.reverse()
+
         for article_element_id in article_element_ids:
             # 만약 데이터베이스에 이미 존재하는 공지사항이라면 넘어간다.
             if crud.find_by_id(db, article_element_id):
