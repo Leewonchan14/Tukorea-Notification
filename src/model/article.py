@@ -2,12 +2,10 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from sqlalchemy import Column, Integer, String, Text, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 from src.crawler import Crawler
-
-Base = declarative_base()
+from src.model.config import Base
 
 
 class Article(Base):
@@ -23,7 +21,7 @@ class Article(Base):
 
     created_at = Column(DateTime, server_default=func.now())
 
-    def to_message(self):
+    def to_message(self) -> str:
         return (
             f"""[({self.write_at}){self.title}]({self.url})\n"""
             f"""작성기관: {self.writer}"""
@@ -32,7 +30,7 @@ class Article(Base):
 
 class ArticleElement:
     @staticmethod
-    def get_new_article_ids(crawler: Crawler):
+    def get_new_article_ids(crawler: Crawler) -> list[str]:
         driver = crawler.get_driver()
 
         driver.get("https://www.tukorea.ac.kr/tukorea/7607/subview.do")
@@ -42,7 +40,7 @@ class ArticleElement:
         return [ArticleElement(new_article).get_id() for new_article in new_articles]
 
     @staticmethod
-    def get_article_by_id(crawler: Crawler, article_id: int):
+    def get_article_by_id(crawler: Crawler, article_id: int) -> 'ArticleElement':
         driver = crawler.get_driver()
 
         driver.get("https://www.tukorea.ac.kr/tukorea/7607/subview.do")
@@ -59,19 +57,19 @@ class ArticleElement:
         self.soup_element = BeautifulSoup(article.get_attribute('outerHTML'), 'html.parser')
         self.web_element = article
 
-    def get_title(self):
+    def get_title(self) -> str:
         return self.soup_element.find('strong').text.strip()
 
-    def get_id(self):
+    def get_id(self) -> str:
         return self.soup_element.find('dl', class_='num').find('dd').text.strip()
 
-    def get_writer(self):
+    def get_writer(self) -> str:
         return self.soup_element.find('dl', class_='writer').find('dd').text.strip()
 
-    def get_write_at(self):
+    def get_write_at(self) -> str:
         return self.soup_element.find('dl', class_='date').find('dd').text.strip()
 
-    def get_url(self, crawler: Crawler):
+    def get_url(self, crawler: Crawler) -> str:
         driver = crawler.get_driver()
 
         driver.execute_script("arguments[0].scrollIntoView();", self.web_element)
@@ -83,7 +81,7 @@ class ArticleElement:
 
     def to_article(self, crawler: Crawler):
         return Article(
-            id=self.get_id(),
+            id=int(self.get_id()),
             writer=self.get_writer(),
             write_at=self.get_write_at(),
             title=self.get_title(),

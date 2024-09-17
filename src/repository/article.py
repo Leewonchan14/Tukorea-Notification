@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from src.crawler import Crawler
-from src.model import Article, ArticleElement
+from src.model.article import Article, ArticleElement
 
 
 def find_by_id(db: Session, article_id: int):

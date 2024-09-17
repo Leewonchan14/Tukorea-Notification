@@ -4,6 +4,7 @@ FROM python:3.12-slim
 RUN apt update
 RUN apt install netcat-traditional
 RUN apt install -y gcc python3-dev
+RUN apt install -y sqlite3
 
 WORKDIR /app
 COPY requirements.txt /app/requirements.txt

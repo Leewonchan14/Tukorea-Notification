@@ -3,6 +3,7 @@ import os
 from discord_webhook import DiscordWebhook
 
 ARTICLE_WEBHOOK_URL = os.getenv("ARTICLE_WEBHOOK_URL")
+DORMITORY_ARTICLE_WEBHOOK_URL = os.getenv("DORMITORY_ARTICLE_WEBHOOK_URL")
 ERROR_WEBHOOK_URL = os.getenv("ERROR_WEBHOOK_URL")
 
 
@@ -13,6 +14,13 @@ class Notification:
 
         if not response.ok:
             raise response.raise_for_status()
+
+    def send_new_dormitory_article_message(self, message: str) -> None:
+        webhook = DiscordWebhook(url=DORMITORY_ARTICLE_WEBHOOK_URL, content=message)
+        response = webhook.execute()
+
+        if not response.ok:
+            response.raise_for_status()
 
     def send_error_message(self, message: str) -> None:
         webhook = DiscordWebhook(url=ERROR_WEBHOOK_URL, content=message)
