@@ -6,6 +6,7 @@ ARTICLE_WEBHOOK_URL = os.getenv("ARTICLE_WEBHOOK_URL")
 DORMITORY_ARTICLE_WEBHOOK_URL = os.getenv("DORMITORY_ARTICLE_WEBHOOK_URL")
 SCHOOL_MEAL_MENU_WEBHOOK_URL = os.getenv("SCHOOL_MEAL_MENU_WEBHOOK_URL")
 ERROR_WEBHOOK_URL = os.getenv("ERROR_WEBHOOK_URL")
+SHUTTLE_BUS_WEBHOOK_URL = os.getenv("SHUTTLE_BUS_WEBHOOK_URL")
 
 
 class Notification:
@@ -29,6 +30,13 @@ class Notification:
 
         if not response.ok:
             raise response.raise_for_status
+
+    def send_new_shuttle_bus_message(self, message: str) -> None:
+        webhook = DiscordWebhook(url=SHUTTLE_BUS_WEBHOOK_URL, content=message)
+        response = webhook.execute()
+
+        if not response.ok:
+            raise response.raise_for_status()
 
     def send_error_message(self, message: str) -> None:
         webhook = DiscordWebhook(url=ERROR_WEBHOOK_URL, content=message)

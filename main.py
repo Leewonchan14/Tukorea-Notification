@@ -14,6 +14,7 @@ from src.notification import Notification
 from src.repeat_task.article import article_repeat_task
 from src.repeat_task.dormitory_article import dormitory_article_repeat_task
 from src.repeat_task.school_meal_menu import school_meal_menu_repeat_task
+from src.repeat_task.shuttle_bus import shuttle_bus_repeat_task
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -43,6 +44,11 @@ def repeat_task():
 
         # 학식 메뉴
         school_meal_menu_repeat_task(
+            logger, db, crawler, notification
+        )
+
+        # 셔틀 시간표
+        shuttle_bus_repeat_task(
             logger, db, crawler, notification
         )
 
