@@ -1,13 +1,16 @@
+import logging
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote import webdriver as remote_webdriver
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 
 class Crawler:
-    def __init__(self):
+    def __init__(self, logger: logging.Logger):
+        self.logger = logger
+
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')  # 헤드리스 모드
         options.add_argument('--no-sandbox')
@@ -37,9 +40,12 @@ class Crawler:
 
     # xpath의 element가 나타날 때까지 기다림 (최대 3초)
     def wait_driver_until_show(self, xpath: str):
-        WebDriverWait(self.driver, 3).until(
-            EC.visibility_of_element_located((By.XPATH, xpath))
-        )
+        try:
+            WebDriverWait(self.driver, 3).until(
+                lambda x: x.find_element(By.XPATH, xpath),
+            )
+        except TimeoutException as error:
+            logging.debug(f"{self.get_current_url()}에서 {xpath}의 요소가 나타나지 않았습니다.")
 
     # 상호작용 가능하게 요소로 스크롤
     def scroll_into_view(self, element: WebElement):

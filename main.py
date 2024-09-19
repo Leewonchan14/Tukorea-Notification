@@ -27,7 +27,7 @@ app = FastAPI()
 @repeat_every(seconds=60 * 5, wait_first=False)  # 5분마다 실행
 def repeat_task():
     db: Session = SessionLocal()
-    crawler: Crawler = Crawler()
+    crawler: Crawler = Crawler(logger)
     notification: Notification = Notification()
     error_manager: ErrorManager = ErrorManager(notification)
 

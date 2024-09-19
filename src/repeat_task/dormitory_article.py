@@ -28,8 +28,7 @@ def dormitory_article_repeat_task(
             continue
 
         new_dormitory_article_element = (
-            DormitoryArticleElement
-            .get_dormitory_article_by_id(
+            DormitoryArticleElement.get_dormitory_article_by_id(
                 crawler,
                 int(dormitory_article_element_id)
             )
