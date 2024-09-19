@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup
-from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.sql import func
@@ -31,14 +30,11 @@ class DormitoryArticle(Base):
 class DormitoryArticleElement:
     @staticmethod
     def get_new_dormitory_article_ids(crawler: Crawler) -> list[str]:
-        driver = crawler.get_driver()
-
-        driver.get(
+        new_dormitory_articles = crawler.find_elements_by_xpath(
             "https://www.tukorea.ac.kr/dorm/2630/subview.do?"
-            "enc=Zm5jdDF8QEB8JTJGYmJzJTJGZG9ybSUyRjU4OSUyRmFydGNsTGlzdC5kbyUzRg%3D%3D"
+            "enc=Zm5jdDF8QEB8JTJGYmJzJTJGZG9ybSUyRjU4OSUyRmFydGNsTGlzdC5kbyUzRg%3D%3D",
+            "//a[.//span[contains(@class, 'new')]]"
         )
-
-        new_dormitory_articles = driver.find_elements(By.XPATH, "//a[.//span[contains(@class, 'new')]]")
 
         return [
             DormitoryArticleElement(new_dormitory_article).get_id() for new_dormitory_article in new_dormitory_articles
@@ -46,16 +42,11 @@ class DormitoryArticleElement:
 
     @staticmethod
     def get_dormitory_article_by_id(crawler: Crawler, dormitory_article_id: int) -> 'DormitoryArticleElement':
-        driver = crawler.get_driver()
-
-        driver.get(
+        dormitory_article = crawler.find_element_by_xpath(
             "https://www.tukorea.ac.kr/dorm/2630/subview.do?"
-            "enc=Zm5jdDF8QEB8JTJGYmJzJTJGZG9ybSUyRjU4OSUyRmFydGNsTGlzdC5kbyUzRg%3D%3D"
-        )
+            "enc=Zm5jdDF8QEB8JTJGYmJzJTJGZG9ybSUyRjU4OSUyRmFydGNsTGlzdC5kbyUzRg%3D%3D",
 
-        dormitory_article = driver.find_element(
-            By.XPATH,
-            f"//a[.//span[contains(@class, 'new')] and .//dl[contains(@class, 'num')]"
+            "//a[.//span[contains(@class, 'new')] and .//dl[contains(@class, 'num')]"
             f"//dd[text()='{dormitory_article_id}']]"
         )
 
@@ -79,14 +70,8 @@ class DormitoryArticleElement:
         return self.soup_element.find('dl', class_='date').find('dd').text.strip()
 
     def get_url(self, crawler: Crawler) -> str:
-        driver = crawler.get_driver()
-
-        driver.execute_script("arguments[0].scrollIntoView();", self.web_element)
-        driver.execute_script("arguments[0].click();", self.web_element)
-
-        current_url = driver.current_url.strip()
-
-        return current_url
+        crawler.click_element(self.web_element)
+        return crawler.get_current_url()
 
     def to_dormitory_article(self, crawler: Crawler):
         return DormitoryArticle(

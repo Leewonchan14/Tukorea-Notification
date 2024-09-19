@@ -29,18 +29,12 @@ class ShuttleBus(Base):
 class ShuttleBusElement:
     @staticmethod
     def get_shuttle_bus_img_elements(crawler: Crawler) -> list['ShuttleBusElement']:
-        driver = crawler.get_driver()
-        driver.get("https://ibook.kpu.ac.kr/Viewer/bus01")
-
-        # 이미지 태그가 나올때 까지 기다린다.
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, "//img[contains(@class, 'pageImage')]"))
+        image_elements = crawler.find_elements_by_xpath(
+            "https://ibook.kpu.ac.kr/Viewer/bus01",
+            "//img[contains(@class, 'pageImage')]"
         )
 
-        return [
-            ShuttleBusElement(x) for x in
-            driver.find_elements(By.XPATH, "//img[contains(@class, 'pageImage')]")
-        ]
+        return [ShuttleBusElement(x) for x in image_elements]
 
     def __init__(self, img_element: WebElement, **kwargs):
         super().__init__(**kwargs)

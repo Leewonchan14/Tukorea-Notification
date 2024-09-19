@@ -1,8 +1,5 @@
 from bs4 import BeautifulSoup
-from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 from sqlalchemy import Column, String, Text, DateTime
 from sqlalchemy.sql import func
 
@@ -29,19 +26,12 @@ class SchoolMealMenu(Base):
 class SchoolMealMenuElement:
     @staticmethod
     def get_school_meal_menu_img_elements(crawler: Crawler) -> list['SchoolMealMenuElement']:
-        driver = crawler.get_driver()
-        driver.get("https://ibook.kpu.ac.kr/Viewer/menu02")
-
-        # 이미지 태그가 나올때 까지 기다린다.
-        image_elements: WebElement
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, "//img[contains(@class, 'pageImage')]"))
+        image_elements: list[WebElement] = crawler.find_elements_by_xpath(
+            "https://ibook.kpu.ac.kr/Viewer/menu02",
+            "//img[contains(@class, 'pageImage')]"
         )
 
-        return [
-            SchoolMealMenuElement(x) for x in
-            driver.find_elements(By.XPATH, "//img[contains(@class, 'pageImage')]")
-        ]
+        return [SchoolMealMenuElement(x) for x in image_elements]
 
     def __init__(self, img_element: WebElement, **kwargs):
         super().__init__(**kwargs)
