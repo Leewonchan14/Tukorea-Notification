@@ -10,36 +10,25 @@ SHUTTLE_BUS_WEBHOOK_URL = os.getenv("SHUTTLE_BUS_WEBHOOK_URL")
 
 
 class Notification:
-    def send_new_article_message(self, message: str) -> None:
-        webhook = DiscordWebhook(url=ARTICLE_WEBHOOK_URL, content=message)
+    @staticmethod
+    def send_text_message_by_webhook(web_hook_url: str, message: str) -> None:
+        webhook = DiscordWebhook(url=web_hook_url, content=message)
         response = webhook.execute()
 
         if not response.ok:
             raise response.raise_for_status()
+
+    def send_new_article_message(self, message: str) -> None:
+        self.send_text_message_by_webhook(ARTICLE_WEBHOOK_URL, message)
 
     def send_new_dormitory_article_message(self, message: str) -> None:
-        webhook = DiscordWebhook(url=DORMITORY_ARTICLE_WEBHOOK_URL, content=message)
-        response = webhook.execute()
-
-        if not response.ok:
-            response.raise_for_status()
+        self.send_text_message_by_webhook(DORMITORY_ARTICLE_WEBHOOK_URL, message)
 
     def send_new_school_meal_menu_message(self, message: str) -> None:
-        webhook = DiscordWebhook(url=SCHOOL_MEAL_MENU_WEBHOOK_URL, content=message)
-        response = webhook.execute()
-
-        if not response.ok:
-            raise response.raise_for_status
+        self.send_text_message_by_webhook(SCHOOL_MEAL_MENU_WEBHOOK_URL, message)
 
     def send_new_shuttle_bus_message(self, message: str) -> None:
-        webhook = DiscordWebhook(url=SHUTTLE_BUS_WEBHOOK_URL, content=message)
-        response = webhook.execute()
-
-        if not response.ok:
-            raise response.raise_for_status()
+        self.send_text_message_by_webhook(SHUTTLE_BUS_WEBHOOK_URL, message)
 
     def send_error_message(self, message: str) -> None:
-        webhook = DiscordWebhook(url=ERROR_WEBHOOK_URL, content=message)
-        response = webhook.execute()
-        if not response.ok:
-            print(response.text)
+        self.send_text_message_by_webhook(ERROR_WEBHOOK_URL, message)
