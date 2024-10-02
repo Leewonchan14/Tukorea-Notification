@@ -38,10 +38,13 @@ class Crawler:
 
     # xpath의 element가 나타날 때까지 기다림 (최대 3초)
     def wait_driver_until_show(self, xpath: str):
-        WebDriverWait(self.driver, 3).until(
-            lambda x: x.find_element(By.XPATH, xpath),
-            f"{self.get_current_url()}에서 {xpath}의 요소가 나타나지 않았습니다."
-        )
+        try:
+            WebDriverWait(self.driver, 3).until(
+                lambda x: x.find_element(By.XPATH, xpath),
+                f"{self.get_current_url()}에서 {xpath}의 요소가 나타나지 않았습니다."
+            )
+        except Exception as e:
+            logging.debug(str(e))
 
     # 상호작용 가능하게 요소로 스크롤
     def scroll_into_view(self, element: WebElement):
