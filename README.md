@@ -43,3 +43,42 @@ width="200" src="https://velog.velcdn.com/images/twoone14/post/2495cb2c-f1ed-404
 <div style="display: flex; justify-content: space-evenly; flex-wrap: wrap;">
 <img src="https://img.shields.io/badge/fastapi-009688?style=for-the-badge&logo=fastapi&logoColor=white"><img src="https://img.shields.io/badge/selenium-43B02A?style=for-the-badge&logo=selenium&logoColor=white"><img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"><img src="https://img.shields.io/badge/amazonec2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white"><img src="https://img.shields.io/badge/discord-5865F2?style=for-the-badge&logo=discord&logoColor=white"><img src="https://img.shields.io/badge/sqlalchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white"><img src="https://img.shields.io/badge/sqlite-003B57?style=for-the-badge&logo=sqlite&logoColor=white">
   </div>
+
+## 설치 및 실행 방법
+
+### 요구 사항
+
+- Docker
+- Docker Compose
+
+### 설치
+
+1. 저장소를 클론합니다.
+
+   ```sh
+   git clone https://github.com/your-repo.git
+   cd your-repo
+   ```
+
+2. Docker 컨테이너를 빌드하고 실행합니다.
+   ```sh
+   docker-compose up --build
+   ```
+
+## 주요 기능
+
+### 공지사항 크롤링 및 알림
+
+- 새로운 공지사항을 크롤링하여 Discord 채널로 알림을 보냅니다.
+
+### 셔틀버스 시간표 크롤링 및 알림
+
+- 새로운 셔틀버스 시간표 이미지를 크롤링하여 Discord 채널로 알림을 보냅니다.
+
+### 학식 메뉴 크롤링 및 알림
+
+- 새로운 학식 메뉴 이미지를 크롤링하여 Discord 채널로 알림을 보냅니다.
+
+### 생활관 공지사항 크롤링 및 알림
+
+- 새로운 생활관 공지사항을 크롤링하여 Discord 채널로 알림을 보냅니다.
