@@ -26,7 +26,8 @@ https://discord.gg/A5xZmqcQNG
 
 <img src="https://velog.velcdn.com/images/twoone14/post/c500be3f-a426-4b7d-b4a8-6b95c45e8cae/image.png">
 
-![](https://velog.velcdn.com/images/twoone14/post/d59d2bbc-de51-458a-9588-4fe8e905262f/image.png)
+![image](https://github.com/user-attachments/assets/9bd77bc9-b992-4b5d-816b-5c45be90a5dd)
+
 
 <div style="display: flex; justify-content: space-evenly">
   <img 
