@@ -36,8 +36,7 @@ width="200" src="https://velog.velcdn.com/images/twoone14/post/2495cb2c-f1ed-404
 </div>
 
 ## 시스템 아키텍쳐
-
-![](https://velog.velcdn.com/images/twoone14/post/5514adef-8ad6-4582-a44a-3c1cab8c2181/image.png)
+<img width="714" alt="image" src="https://github.com/user-attachments/assets/a97245f2-3f1e-4220-bba9-e084c102c64d" />
 
 ## 기술 스택
 
