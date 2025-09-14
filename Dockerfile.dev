@@ -1,0 +1,9 @@
+FROM mcr.microsoft.com/playwright:v1.55.0-noble as runner
+
+WORKDIR /app
+
+COPY . .
+
+RUN npm install
+
+CMD ["npm", "run", "dev"]
