@@ -1,7 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
-import { scheduleTasks } from "./schedule";
 import { getEnv } from "./env";
+import { scheduleTasks } from "./schedule";
 
 const app = express();
 const PORT = getEnv("PORT");

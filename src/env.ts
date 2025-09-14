@@ -1,6 +1,10 @@
 import dotenv from "dotenv";
+
+export const isDev = process.env.NODE_ENV !== "production";
+console.log("isDev: ", isDev);
 dotenv.config({
-  debug: process.env.NODE_ENV === "development",
+  debug: isDev,
+  path: isDev ? ".env.dev" : ".env",
 });
 
 interface Env {
