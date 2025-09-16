@@ -2,20 +2,22 @@ import { sendWebHook } from "@/discord-webhook";
 import { getEnv } from "@/env";
 import { NoticeAuthor } from "@/schema/notice-athor.schema";
 import { INotice, Notice } from "@/schema/notice.schema";
-import { Page } from "playwright";
 import _ from "lodash";
+import { Page } from "playwright";
+import { queueing } from "./queueing";
 
 const TARGET_DOMAIN = "https://www.tukorea.ac.kr";
 const WEBHOOK_URL = getEnv("NOTICE_WEBHOOK");
 
-export const noticeCrawler = async (getPage: () => Promise<Page>) => {
+export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
   const page = await getPage();
   await page.goto(`${TARGET_DOMAIN}/tukorea/7607/subview.do`);
   await page.waitForSelector("a:has(span)", {
-    timeout: 10000,
+    // timeout: 10000,
   });
 
   const newNotices = await page.locator("a:has(span[class*='new'])").all();
+  console.log("newNotices: ", newNotices);
 
   const filteredNewNotices = _.compact(
     await Promise.all(
@@ -72,7 +74,7 @@ export const noticeCrawler = async (getPage: () => Promise<Page>) => {
   filteredNewNotices.forEach(async (notice) => {
     await sendWebHook(WEBHOOK_URL, noticeToMessage(notice));
   });
-};
+});
 
 const noticeToMessage = (notice: INotice) => {
   return `[(${notice.postedAt})[${notice.author.name}]${notice.title}](${notice.href})`;

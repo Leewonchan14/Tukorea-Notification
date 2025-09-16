@@ -19,6 +19,7 @@
     "lodash": "^4.17.21",
     "mongoose": "^8.18.1",
     "node-cron": "^4.2.1",
+    "p-queue": "^8.1.1",
     "playwright": "^1.55.0"
   },
   "devDependencies": {

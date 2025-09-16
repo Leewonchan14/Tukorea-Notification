@@ -1,10 +1,10 @@
+import { withErorrWebHook } from "@/discord-webhook";
 import cron from "node-cron";
-import { noticeCrawler } from "./notice.crawler";
 import { chromium } from "playwright";
 import { dormitoryNoticeCrawler } from "./dormitory-notice.crawler";
-import { shuttleCrawler } from "./shuttle.crawler";
+import { noticeCrawler } from "./notice.crawler";
 import { schoolMealCrawler } from "./school-meal.crawler";
-import { withErorrWebHook } from "@/discord-webhook";
+import { shuttleCrawler } from "./shuttle.crawler";
 
 export const scheduleTasks = async () => {
   const browser = await chromium.launch({
@@ -15,10 +15,32 @@ export const scheduleTasks = async () => {
       "--disable-dev-shm-usage",
       "--disable-accelerated-2d-canvas",
       "--disable-gpu",
+      "--disable-web-security",
+      "--disable-features=VizDisplayCompositor",
+      "--disable-background-networking",
+      "--disable-background-timer-throttling",
+      "--disable-renderer-backgrounding",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-client-side-phishing-detection",
+      "--disable-sync",
+      "--disable-extensions",
+      "--disable-default-apps",
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--memory-pressure-off",
+      "--max-old-space-size=256",
     ],
   });
+
   const ctx = await browser.newContext();
-  const getPage = () => ctx.newPage();
+
+  const getPage = async () => {
+    const pages = ctx.pages();
+    if (pages.length !== 0 && pages[0]) {
+      return pages[0];
+    }
+    return ctx.newPage();
+  };
 
   // Notice
   withErorrWebHook(() => noticeCrawler(getPage))();
