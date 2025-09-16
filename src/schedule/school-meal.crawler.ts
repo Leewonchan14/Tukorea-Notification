@@ -16,6 +16,7 @@ export const schoolMealCrawler = queueing(
     await page.waitForSelector("img[class*='pageImage']");
 
     const images = await page.locator("img[class*='pageImage']").all();
+    console.log("images: ", images);
 
     const filteredNewSchoolMeals = _.compact(
       await Promise.all(

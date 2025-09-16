@@ -15,6 +15,7 @@ export const shuttleCrawler = queueing(async (getPage: () => Promise<Page>) => {
   });
 
   const images = await page.locator("img[class*='pageImage']").all();
+  console.log("images: ", images);
 
   const filteredNewShuttles = _.compact(
     await Promise.all(
