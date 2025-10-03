@@ -9,8 +9,7 @@ RUN npm install
 RUN npm run build
 
 FROM mcr.microsoft.com/playwright:v1.55.0-noble AS runner
-
-# CMD tail -f /dev/null
+RUN npx playwright install chromium --with-deps
 
 WORKDIR /app
 
