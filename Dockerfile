@@ -6,8 +6,6 @@ COPY . .
 
 RUN npm install
 
-CMD ["tail", "-f", "/dev/null"]
-
 RUN npm run build
 
 FROM mcr.microsoft.com/playwright:v1.55.0-noble AS runner
