@@ -82,5 +82,5 @@ export const dormitoryNoticeCrawler = queueing(
 );
 
 const noticeToMessage = (notice: IDormitoryNotice) => {
-  return `[(${notice.postedAt})[${notice.author.name}]${notice.title}](${notice.href})`;
+  return `[(${notice.postedAt})[${notice.author.name}]${notice.title}](${notice.href})\n작성기관: ${notice.author.name}`;
 };

@@ -42,5 +42,5 @@ export const shuttleCrawler = queueing(async (getPage: () => Promise<Page>) => {
 });
 
 const shuttleToMessage = (shuttle: IShuttles) => {
-  return `[${shuttle.place}](${shuttle.src})`;
+  return `${shuttle.place}\n${shuttle.src}`;
 };

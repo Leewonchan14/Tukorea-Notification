@@ -43,5 +43,5 @@ export const schoolMealCrawler = queueing(
 );
 
 const schoolMealToMessage = (schoolMeal: ISchoolMeal) => {
-  return `[${schoolMeal.place}](${schoolMeal.src})`;
+  return `${schoolMeal.place}\n${schoolMeal.src}`;
 };
