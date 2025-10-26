@@ -46,53 +46,69 @@ export class GeminiCli {
 
     // source에 첨부 사진들 저장
     const noticeDir = path.join(GeminiCli.SOURCE_DIR, noticeInfo.noticeId);
-    await fs.promises.mkdir(noticeDir, { recursive: true });
-    await Promise.all(
-      pictures.map(async (pic) => {
-        const picPath = path.join(noticeDir, pic.name);
-        // 파일 저장
-        await fs.promises.writeFile(picPath, pic.buffer);
-        console.log("writing pictures: ", pic.name);
-        return pic;
-      })
-    );
-
-    const geminiArgs = GeminiCli.buildGeminiArgs(
-      JSON.stringify(aiInputSchema.parse(noticeInfo)) +
-        " " +
-        pictures.map((pic) => `@${pic.name}`).join(" ")
-    );
-
-    const excute = async () => {
-      const { stdout, stderr } = await execCmdAsync(
-        GeminiCli.GEMINI_EXEC,
-        geminiArgs,
-        {
-          cwd: getEnv("HOME"),
-          env: {
-            GEMINI_SYSTEM_MD: GeminiCli.SYSTEM_NOTICE_PROMPT,
-          },
-        }
+    try {
+      await fs.promises.mkdir(noticeDir, { recursive: true });
+      await Promise.all(
+        pictures.map(async (pic) => {
+          const picPath = path.join(noticeDir, pic.name);
+          // 파일 저장
+          await fs.promises.writeFile(picPath, pic.buffer);
+          console.log("writing pictures: ", pic.name);
+          return pic;
+        })
       );
 
-      return extractJsonFromLlm(stdout, aiOutputSchema);
-    };
+      const geminiArgs = GeminiCli.buildGeminiArgs(
+        JSON.stringify(aiInputSchema.parse(noticeInfo)) +
+          " " +
+          pictures.map((pic) => `@${pic.name}`).join(" ")
+      );
 
-    let result: z.infer<typeof aiOutputSchema> | undefined;
+      const excute = async () => {
+        const { stdout, stderr } = await execCmdAsync(
+          GeminiCli.GEMINI_EXEC,
+          geminiArgs,
+          {
+            cwd: getEnv("HOME"),
+            env: {
+              GEMINI_SYSTEM_MD: GeminiCli.SYSTEM_NOTICE_PROMPT,
+            },
+          }
+        );
 
-    for (let i = 0; i < 3; i++) {
+        if (stderr) {
+          console.log("stderr: ", stderr);
+        }
+
+        return extractJsonFromLlm(stdout, aiOutputSchema);
+      };
+
+      let result: z.infer<typeof aiOutputSchema> | undefined;
+
+      for (let i = 0; i < 3; i++) {
+        try {
+          console.log(`Attempt ${i + 1}/3 to extract notice info`);
+          result = await excute();
+          console.log(`Successfully extracted notice info on attempt ${i + 1}`);
+          break;
+        } catch (error) {
+          console.error(`Attempt ${i + 1}/3 failed:`, error);
+          if (i === 2) {
+            console.error("All attempts failed for notice extraction");
+          }
+        }
+      }
+
+      return result;
+    } finally {
+      // 항상 정리
       try {
-        result = await excute();
-        break;
-      } catch (error) {
-        console.error("error: ", error);
+        await fs.promises.rm(noticeDir, { recursive: true, force: true });
+        console.log(`Cleaned up ${noticeDir}`);
+      } catch (cleanupError) {
+        console.error("Failed to cleanup notice directory:", cleanupError);
       }
     }
-
-    // noticeDir 삭제
-    await fs.promises.rmdir(noticeDir, { recursive: true });
-
-    return result;
   }
 
   public static async extractMealInfo(
@@ -103,54 +119,68 @@ export class GeminiCli {
 
     // source에 첨부 사진들 저장
     const mealDir = path.join(GeminiCli.SOURCE_DIR, "meal");
-    await fs.promises.mkdir(mealDir, { recursive: true });
-    await Promise.all(
-      pictures.map(async (pic) => {
-        const picPath = path.join(mealDir, pic.name);
-        await fs.promises.writeFile(picPath, pic.buffer);
-      })
-    );
 
-    const geminiArgs = GeminiCli.buildGeminiArgs(
-      JSON.stringify(mealInputSchema.parse(mealInfo)) +
-        " " +
-        pictures.map((pic) => `@${pic.name}`).join(" ")
-    );
-
-    const excute = async () => {
-      const { stdout, stderr } = await execCmdAsync(
-        GeminiCli.GEMINI_EXEC,
-        geminiArgs,
-        {
-          cwd: getEnv("HOME"),
-          env: {
-            GEMINI_SYSTEM_MD: GeminiCli.SYSTEM_MEAL_PROMPT,
-          },
-        }
+    try {
+      await fs.promises.mkdir(mealDir, { recursive: true });
+      await Promise.all(
+        pictures.map(async (pic) => {
+          const picPath = path.join(mealDir, pic.name);
+          await fs.promises.writeFile(picPath, pic.buffer);
+          console.log("writing meal pictures: ", pic.name);
+        })
       );
 
-      console.log("stderr: ", stderr);
+      const geminiArgs = GeminiCli.buildGeminiArgs(
+        JSON.stringify(mealInputSchema.parse(mealInfo)) +
+          " " +
+          pictures.map((pic) => `@${pic.name}`).join(" ")
+      );
 
-      return extractJsonFromLlm(stdout, mealOutputSchema);
-    };
+      const excute = async () => {
+        const { stdout, stderr } = await execCmdAsync(
+          GeminiCli.GEMINI_EXEC,
+          geminiArgs,
+          {
+            cwd: getEnv("HOME"),
+            env: {
+              GEMINI_SYSTEM_MD: GeminiCli.SYSTEM_MEAL_PROMPT,
+            },
+          }
+        );
 
-    let result: z.infer<typeof mealOutputSchema> | undefined;
+        if (stderr) {
+          console.log("stderr: ", stderr);
+        }
 
-    for (let i = 0; i < 3; i++) {
+        return extractJsonFromLlm(stdout, mealOutputSchema);
+      };
+
+      let result: z.infer<typeof mealOutputSchema> | undefined;
+
+      for (let i = 0; i < 3; i++) {
+        try {
+          console.log(`Attempt ${i + 1}/3 to extract meal info`);
+          result = await excute();
+          console.log(`Successfully extracted meal info on attempt ${i + 1}`);
+          break;
+        } catch (error) {
+          console.error(`Attempt ${i + 1}/3 failed:`, error);
+          if (i === 2) {
+            console.error("All attempts failed for meal extraction");
+          }
+        }
+      }
+
+      return result;
+    } finally {
+      // 항상 정리
       try {
-        result = await excute();
-        break;
-      } catch (error) {
-        console.error("error: ", error);
+        await fs.promises.rm(mealDir, { recursive: true, force: true });
+        console.log(`Cleaned up ${mealDir}`);
+      } catch (cleanupError) {
+        console.error("Failed to cleanup meal directory:", cleanupError);
       }
     }
-
-    // mealDir 삭제
-    pictures.forEach(async (pic) => {
-      await fs.promises.unlink(path.join(mealDir, pic.name));
-    });
-
-    return result;
   }
 
   private static buildGeminiArgs = (
@@ -162,7 +192,7 @@ export class GeminiCli {
       input,
       // model
       "-m",
-      "gemini-2.5-flash",
+      model,
       // include directories
       "--include-directories",
       GeminiCli.SOURCE_DIR,
