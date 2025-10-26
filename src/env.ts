@@ -15,6 +15,7 @@ interface Env {
 
   // GEMINI
   readonly GEMINI_EXEC: string;
+  readonly GEMINI_API_KEY: string;
   readonly HOME: string;
 }
 

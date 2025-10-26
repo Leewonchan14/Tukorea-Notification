@@ -1,12 +1,12 @@
-import { slugify } from "transliteration";
 import { LlmJson } from "@solvers-hub/llm-json/dist/src/index";
 import { spawn, SpawnOptionsWithoutStdio } from "child_process";
 import createDOMPurify from "dompurify";
 import fs from "fs";
 import { JSDOM } from "jsdom";
+import path from "path";
+import { slugify } from "transliteration";
 import z from "zod";
 import { getEnv } from "./env";
-import path from "path";
 export const asyncExist = async (path: string): Promise<boolean> => {
   if (path.startsWith("~")) {
     path = path.replace("~", getEnv("HOME"));
@@ -29,7 +29,11 @@ export const execAsync = (
     let stderr = "";
     console.log("execAsync: ", command, args, options);
     const child = spawn(command, args, {
-      env: { HOME: getEnv("HOME"), ...options.env },
+      env: {
+        HOME: getEnv("HOME"),
+        GEMINI_API_KEY: getEnv("GEMINI_API_KEY"),
+        ...options.env,
+      },
     });
 
     child.stdout.on("data", (data) => {
