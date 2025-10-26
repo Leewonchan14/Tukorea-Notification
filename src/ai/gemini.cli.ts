@@ -196,6 +196,8 @@ export class GeminiCli {
       // include directories
       "--include-directories",
       GeminiCli.SOURCE_DIR,
+      "--output-format",
+      "json"
     ];
   };
 }
