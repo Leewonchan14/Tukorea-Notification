@@ -20,7 +20,7 @@ interface Env {
 
 type EnvKey =
   | keyof Env
-  | (typeof MAJOR_LIST)[number]["value"]
+  | (typeof MAJOR_LIST)[number]["name"]
   | keyof typeof WEBHOOK_MAP;
 
 export const getEnv = (key: EnvKey) => {
