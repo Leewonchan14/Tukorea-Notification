@@ -4,6 +4,7 @@ import { getEnv } from "@/env";
 import { NoticeAuthor } from "@/schema/notice-athor.schema";
 import { INotice, Notice } from "@/schema/notice.schema";
 import { convertSrcToBuffer, sanitizeHtmlForAi } from "@/util";
+import { ROLE_MAP } from "@/webhook";
 import _ from "lodash";
 import { Page } from "playwright";
 import { queueing } from "./queueing";
@@ -157,7 +158,9 @@ const noticeToMessage = async (notice: INotice) => {
 
   return [
     `# [(${notice.postedAt})[${notice.author.name}]${notice.title}](${notice.href})`,
-    `### ⚠️ ${llmReview?.majorList.join(", ")} 주목`,
+    `### ⚠️ ${llmReview?.majorList
+      .map((v) => `<@&${ROLE_MAP[v]}>`)
+      .join(" ")} 주목`,
     "",
     llmReview ? llmReview?.description : "",
   ].join("\n");

@@ -1,86 +1,68 @@
 const MAJOR_LIST = [
   {
     name: "모든 학과",
-    value: "ALL_MAJOR",
-    discord: "...",
+    role: "everyone",
   },
   {
     name: "게임공학과",
-    value: "GAME_ENGINEERING",
-    discord: "...",
+    role: "게임공학과",
   },
   {
     name: "인공지능학과",
-    value: "AI",
-    discord: "...",
+    role: "인공지능학과",
   },
   {
     name: "컴퓨터공학부",
-    value: "COMPUTER_ENGINEERING",
-    discord: "...",
+    role: "컴퓨터공학부",
   },
   {
     name: "전자공학부",
-    value: "ELECTRONIC_ENGINEERING",
-    discord: "...",
+    role: "전자공학부",
   },
   {
     name: "반도체공학부",
-    value: "SEMICONDUCTOR_ENGINEERING",
-    discord: "...",
+    role: "반도체공학부",
   },
   {
     name: "기계공학과",
-    value: "MECHANICAL_ENGINEERING",
-    discord: "...",
+    role: "기계공학과",
   },
   {
     name: "기계설계공학부",
-    value: "MECHANICAL_DESIGN_ENGINEERING",
-    discord: "...",
+    role: "기계설계공학부",
   },
   {
     name: "메카트로닉스공학부",
-    value: "MECHATRONICS_ENGINEERING",
-    discord: "...",
+    role: "메카트로닉스공학부",
   },
   {
     name: "신소재공학과",
-    value: "NEW_MATERIAL_ENGINEERING",
-    discord: "...",
+    role: "신소재공학과",
   },
   {
     name: "생명화학공학과",
-    value: "BIOCHEMICAL_ENGINEERING",
-    discord: "...",
+    role: "생명화학공학과",
   },
   {
     name: "에너지ㆍ전기공학부",
-    value: "ENERGY_ELECTRICAL_ENGINEERING",
-    discord: "...",
+    role: "에너지ㆍ전기공학부",
   },
   {
     name: "경영학부",
-    value: "BUSINESS_ENGINEERING",
-    discord: "...",
+    role: "경영학부",
   },
   {
     name: "디자인공학부",
-    value: "DESIGN_ENGINEERING",
-    discord: "...",
+    role: "디자인공학부",
   },
   {
     name: "지식융합학부",
-    value: "KNOWLEDGE_INTEGRATION_ENGINEERING",
-    discord: "...",
+    role: "지식융합학부",
   },
 ] as const;
 
 const WEBHOOK_MAP = {
-  ...Object.fromEntries(
-    MAJOR_LIST.map((major) => [major.value, major.discord])
-  ),
-
+  NOTICE_WEBHOOK: "...",
   DORMITORY_NOTICE_WEBHOOK: "...",
   SCHOOL_MEAL_WEBHOOK: "...",
   SHUTTLE_WEBHOOK: "...",

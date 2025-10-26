@@ -10,6 +10,8 @@ RUN npm run build
 
 FROM mcr.microsoft.com/playwright:v1.55.0-noble AS runner
 RUN npx playwright install chromium --with-deps
+# install gemini-cli
+RUN npm i -g @google/gemini-cli
 
 WORKDIR /app
 
