@@ -9,7 +9,7 @@ import _ from "lodash";
 import { Page } from "playwright";
 import { queueing } from "./queueing";
 
-const TARGET_DOMAIN = "https://dorm.tukorea.ac.kr/dorm/2630/subview.do";
+const TARGET_DOMAIN = "https://www.tukorea.ac.kr";
 const WEBHOOK_URL = getEnv("DORMITORY_NOTICE_WEBHOOK");
 
 export const dormitoryNoticeCrawler = queueing(
