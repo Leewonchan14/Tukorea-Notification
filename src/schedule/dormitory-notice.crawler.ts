@@ -21,7 +21,7 @@ export const dormitoryNoticeCrawler = queueing(
     });
 
     const newNotices = await page.locator("a:has(span[class*='new'])").all();
-    console.log("newNotices: ", newNotices);
+    console.log("dormitory notice newNotices: ", newNotices.length);
 
     const filteredNewNotices = _.compact(
       await Promise.all(
@@ -82,5 +82,9 @@ export const dormitoryNoticeCrawler = queueing(
 );
 
 const noticeToMessage = (notice: IDormitoryNotice) => {
-  return `[(${notice.postedAt})[${notice.author.name}]${notice.title}](${notice.href})\n작성기관: ${notice.author.name}`;
+  return [
+    `[(${notice.postedAt})[${notice.author.name}]`,
+    `${notice.title}](${notice.href})\n`,
+    `작성기관: ${notice.author.name}`,
+  ].join("");
 };
