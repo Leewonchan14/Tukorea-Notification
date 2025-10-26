@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { MAJOR_LIST, WEBHOOK_MAP } from "./webhook";
 
 export const isDev = process.env.NODE_ENV !== "production";
 console.log("isDev: ", isDev);
@@ -11,17 +12,24 @@ interface Env {
   readonly NODE_ENV: "development" | "production" | "test";
   readonly PORT: string;
   readonly MONGODB_URI: string;
-  readonly NOTICE_WEBHOOK: string;
-  readonly DORMITORY_NOTICE_WEBHOOK: string;
-  readonly SCHOOL_MEAL_WEBHOOK: string;
-  readonly SHUTTLE_WEBHOOK: string;
-  readonly ERROR_WEBHOOK: string;
+
+  // GEMINI
+  readonly GEMINI_EXEC: string;
+  readonly HOME: string;
 }
 
-export const getEnv = (key: keyof Env) => {
+type EnvKey =
+  | keyof Env
+  | (typeof MAJOR_LIST)[number]["value"]
+  | keyof typeof WEBHOOK_MAP;
+
+export const getEnv = (key: EnvKey) => {
+  process.env = { ...process.env, ...WEBHOOK_MAP };
+
   if (!process.env[key]) {
     console.error(`${key}: `, process.env[key]);
     throw new Error(`${key} is not set`);
   }
-  return process.env[key] as Env[typeof key];
+
+  return process.env[key];
 };

@@ -1,5 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
+
+import { GeminiCli } from "./ai/gemini.cli";
 import { getEnv } from "./env";
 import { scheduleTasks } from "./schedule";
 
@@ -22,6 +24,7 @@ const main = async () => {
   await mongoose.connect(`mongodb://${MONGODB_URI}`);
   console.log("Connected to MongoDB");
 
+  await GeminiCli.init();
   await scheduleTasks();
 
   app.listen(Number(PORT), () => {

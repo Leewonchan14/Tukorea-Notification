@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "extract": "tsx src/index.ts",
     "dev": "NODE_ENV=development tsx watch src/index.ts",
     "build": "rm -rf dist && tsc && tsc-alias",
     "start": "NODE_ENV=production node dist/index.js"
@@ -12,18 +13,24 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@solvers-hub/llm-json": "^0.1.7",
     "dayjs": "^1.11.18",
     "discord.js": "^14.22.1",
+    "dompurify": "^3.3.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "jsdom": "^27.0.1",
     "lodash": "^4.17.21",
     "mongoose": "^8.18.1",
     "node-cron": "^4.2.1",
     "p-queue": "^8.1.1",
-    "playwright": "^1.55.0"
+    "playwright": "^1.55.0",
+    "transliteration": "^2.3.5",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
+    "@types/jsdom": "^27.0.0",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.3.3",
     "@types/node-cron": "^3.0.11",

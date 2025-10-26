@@ -15,7 +15,7 @@ export const shuttleCrawler = queueing(async (getPage: () => Promise<Page>) => {
   });
 
   const images = await page.locator("img[class*='pageImage']").all();
-  console.log("images: ", images);
+  console.log("shuttle images: ", images.length);
 
   const filteredNewShuttles = _.compact(
     await Promise.all(
@@ -33,7 +33,6 @@ export const shuttleCrawler = queueing(async (getPage: () => Promise<Page>) => {
       })
     )
   );
-
   await page.close();
 
   filteredNewShuttles.forEach(async (shuttle) => {

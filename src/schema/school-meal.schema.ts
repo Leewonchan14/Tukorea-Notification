@@ -6,6 +6,8 @@ export interface ISchoolMeal extends Document {
   place: string;
   createdAt: dayjs.Dayjs;
   updatedAt: dayjs.Dayjs;
+  rawLabel: string;
+  description?: string;
 }
 
 const schoolMealSchema = new Schema<ISchoolMeal>(
@@ -17,6 +19,13 @@ const schoolMealSchema = new Schema<ISchoolMeal>(
     place: {
       type: String,
       required: true,
+    },
+    rawLabel: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
     },
     createdAt: {
       type: Date,

@@ -1,6 +1,8 @@
+import { GeminiCli } from "@/ai/gemini.cli";
 import { sendWebHook } from "@/discord-webhook";
 import { getEnv } from "@/env";
 import { ISchoolMeal, SchoolMeal } from "@/schema/school-meal.schema";
+import { convertSrcToBuffer } from "@/util";
 import _ from "lodash";
 import { Page } from "playwright";
 import { queueing } from "./queueing";
@@ -16,7 +18,7 @@ export const schoolMealCrawler = queueing(
     await page.waitForSelector("img[class*='pageImage']");
 
     const images = await page.locator("img[class*='pageImage']").all();
-    console.log("images: ", images);
+    console.log("school meal images: ", images.length);
 
     const filteredNewSchoolMeals = _.compact(
       await Promise.all(
@@ -25,11 +27,12 @@ export const schoolMealCrawler = queueing(
           const place = await image
             .getAttribute("aria-label")
             .then((v) => v?.split("\n")[0]?.trim());
+          const rawLabel = (await image.getAttribute("aria-label")) ?? "";
 
           const findSchoolMeal = await SchoolMeal.findOne({ src: src });
           if (findSchoolMeal) return undefined;
 
-          return await SchoolMeal.create({ src, place });
+          return await SchoolMeal.create({ src, place, rawLabel });
         })
       )
     );
@@ -37,11 +40,29 @@ export const schoolMealCrawler = queueing(
     await page.close();
 
     filteredNewSchoolMeals.forEach(async (schoolMeal) => {
-      await sendWebHook(WEBHOOK_URL, schoolMealToMessage(schoolMeal));
+      await sendWebHook(WEBHOOK_URL, await schoolMealToMessage(schoolMeal));
     });
   }
 );
 
-const schoolMealToMessage = (schoolMeal: ISchoolMeal) => {
-  return `${schoolMeal.place}\n${schoolMeal.src}`;
+const schoolMealToMessage = async (schoolMeal: ISchoolMeal) => {
+  const attachedPictures = await convertSrcToBuffer(schoolMeal.src);
+  const llmReview = await GeminiCli.extractMealInfo(
+    {
+      rawLabel: schoolMeal.rawLabel,
+      attachedPictures: [attachedPictures.name],
+    },
+    [attachedPictures]
+  );
+
+  await SchoolMeal.findOneAndUpdate(
+    { src: schoolMeal.src },
+    { description: llmReview?.description ?? "" }
+  );
+
+  return [
+    `# [${schoolMeal.place}](${schoolMeal.src})`,
+    "",
+    llmReview?.description ?? "",
+  ].join("\n");
 };

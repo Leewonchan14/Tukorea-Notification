@@ -26,3 +26,6 @@ Thumbs.db
 playwright-report/
 test-results/
 .cache/ms-playwright/
+
+# discord
+webhook.ts

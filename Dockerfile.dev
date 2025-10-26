@@ -1,9 +1,15 @@
 FROM mcr.microsoft.com/playwright:v1.55.0-noble as runner
 
+# install gemini-cli
+RUN npm i -g @google/gemini-cli
+
 WORKDIR /app
 
-COPY . .
+COPY package.json ./
+COPY package-lock.json ./
 
 RUN npm install
+
+COPY . .
 
 CMD ["npm", "run", "dev"]

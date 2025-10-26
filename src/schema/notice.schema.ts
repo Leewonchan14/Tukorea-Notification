@@ -10,6 +10,11 @@ export interface INotice extends Document {
   postedAt: string;
   createdAt: dayjs.Dayjs;
   updatedAt: dayjs.Dayjs;
+  content: string;
+  description: string;
+  majorList: string[];
+  attachedPictures: string[]; // 첨부된 사진 src 목록
+  attachedFileNames: string[]; // 첨부된 파일 이름 목록
 }
 
 const noticeSchema = new Schema<INotice>(
@@ -28,6 +33,28 @@ const noticeSchema = new Schema<INotice>(
       type: String,
       required: true,
       maxlength: 255,
+    },
+    content: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+    },
+    majorList: {
+      type: [String],
+      required: true,
+      default: [],
+    },
+    attachedPictures: {
+      type: [String],
+      required: true,
+      default: [],
+    },
+    attachedFileNames: {
+      type: [String],
+      required: true,
+      default: [],
     },
     author: {
       type: Schema.Types.ObjectId,
