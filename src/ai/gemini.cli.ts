@@ -72,6 +72,7 @@ export class GeminiCli {
             cwd: getEnv("HOME"),
             env: {
               GEMINI_SYSTEM_MD: GeminiCli.SYSTEM_NOTICE_PROMPT,
+              GEMINI_API_KEY: getEnv("GEMINI_API_KEY"),
             },
           }
         );
@@ -197,7 +198,7 @@ export class GeminiCli {
       "--include-directories",
       GeminiCli.SOURCE_DIR,
       "--output-format",
-      "json"
+      "json",
     ];
   };
 }

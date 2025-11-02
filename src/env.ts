@@ -27,6 +27,12 @@ type EnvKey =
 export const getEnv = (key: EnvKey) => {
   process.env = { ...process.env, ...WEBHOOK_MAP };
 
+  if (isDev) {
+    for (const k of Object.keys(WEBHOOK_MAP)) {
+      process.env[k] = WEBHOOK_MAP["ERROR_WEBHOOK"];
+    }
+  }
+
   if (!process.env[key]) {
     console.error(`${key}: `, process.env[key]);
     throw new Error(`${key} is not set`);

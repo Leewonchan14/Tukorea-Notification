@@ -8,6 +8,7 @@ import { shuttleCrawler } from "./shuttle.crawler";
 
 export const scheduleTasks = async () => {
   const browser = await chromium.launch({
+    // headless: false,
     headless: true,
     args: [
       "--no-sandbox",
