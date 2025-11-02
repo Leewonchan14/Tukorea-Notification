@@ -157,8 +157,10 @@ const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {
   );
 
   return GeminiCli.extractInfo(
-    { ...notice, id: notice.noticeId },
+    notice.noticeId,
+    notice,
     attachedPictures,
+    aiInputSchema,
     aiOutputSchema,
     "notice"
   );

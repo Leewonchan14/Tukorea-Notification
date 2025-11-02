@@ -1,7 +1,7 @@
 import { GeminiCli } from "@/ai/gemini.cli";
 import { sendWebHook } from "@/discord-webhook";
 import { getEnv } from "@/env";
-import { mealOutputSchema } from "@/schema/ai.schema";
+import { mealInputSchema, mealOutputSchema } from "@/schema/ai.schema";
 import { ISchoolMeal, SchoolMeal } from "@/schema/school-meal.schema";
 import { convertSrcToBuffer } from "@/util";
 import _ from "lodash";
@@ -14,7 +14,7 @@ export const schoolMealCrawler = queueing(
   async (getPage: () => Promise<Page>) => {
     const page = await getPage();
     await page.goto("https://ibook.kpu.ac.kr/Viewer/menu02", {
-      // timeout: 10000,
+      waitUntil: "domcontentloaded",
     });
     await page.waitForSelector("img[class*='pageImage']");
 
@@ -40,31 +40,30 @@ export const schoolMealCrawler = queueing(
 
     await page.close();
 
-    filteredNewSchoolMeals.forEach(async (schoolMeal) => {
-      const { description } = await extractWithAI(schoolMeal);
-
+    for (const schoolMeal of filteredNewSchoolMeals) {
+      // const { description } = await extractWithAI(schoolMeal);
       const createdSchoolMeal = await SchoolMeal.create({
         ...schoolMeal,
-        description,
+        // description,
       });
-
       await sendWebHook(
         WEBHOOK_URL,
         await schoolMealToMessage(createdSchoolMeal)
       );
-    });
+    }
   }
 );
 
 const extractWithAI = async (schoolMeal: { src: string; rawLabel: string }) => {
   const attachedPictures = await convertSrcToBuffer(schoolMeal.src);
   return GeminiCli.extractInfo(
+    "meal",
     {
-      id: "meal",
       rawLabel: schoolMeal.rawLabel,
       attachedPictures: [attachedPictures.name],
     },
     [attachedPictures],
+    mealInputSchema,
     mealOutputSchema,
     "meal"
   );

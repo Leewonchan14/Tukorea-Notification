@@ -35,18 +35,17 @@ export class GeminiCli {
     GeminiCli.isInitialized = true;
   }
 
-  public static async extractInfo<
-    T extends { id: string },
-    O extends z.ZodSchema
-  >(
-    info: T,
+  public static async extractInfo<T, O extends z.ZodSchema>(
+    id: string,
+    input: T,
     pictures: { name: string; buffer: Buffer }[],
+    inputSchema: z.ZodSchema<T>,
     outputSchema: O,
     systemPrompt: "notice" | "meal"
   ): Promise<z.infer<O>> {
     await GeminiCli.init();
     // source에 첨부 사진들 저장
-    const noticeDir = path.join(GeminiCli.SOURCE_DIR, info.id);
+    const noticeDir = path.join(GeminiCli.SOURCE_DIR, id);
     try {
       await fs.promises.mkdir(noticeDir, { recursive: true });
       await Promise.all(
@@ -66,7 +65,7 @@ export class GeminiCli {
       );
 
       const geminiArgs = GeminiCli.buildGeminiArgs(
-        JSON.stringify(aiInputSchema.parse(info)) +
+        JSON.stringify(inputSchema.parse(input)) +
           " " +
           pictures.map((pic) => `@${pic.name}`).join(" ")
       );
