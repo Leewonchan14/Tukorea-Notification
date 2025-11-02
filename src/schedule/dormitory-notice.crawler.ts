@@ -15,10 +15,10 @@ const WEBHOOK_URL = getEnv("DORMITORY_NOTICE_WEBHOOK");
 export const dormitoryNoticeCrawler = queueing(
   async (getPage: () => Promise<Page>) => {
     const page = await getPage();
-    await page.goto("https://dorm.tukorea.ac.kr/dorm/2630/subview.do");
-    await page.waitForSelector("a:has(span)", {
-      // timeout: 10000,
+    await page.goto("https://dorm.tukorea.ac.kr/dorm/2630/subview.do", {
+      waitUntil: "domcontentloaded",
     });
+    await page.waitForSelector("a:has(span)");
 
     const newNotices = await page.locator("a:has(span[class*='new'])").all();
     console.log("dormitory notice newNotices: ", newNotices.length);
