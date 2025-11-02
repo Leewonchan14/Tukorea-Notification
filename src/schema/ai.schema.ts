@@ -1,7 +1,10 @@
-import { MAJOR_LIST } from "@/webhook";
+import { MAJOR_LIST, TARGET_STUDENTS_LIST } from "@/webhook";
 import z from "zod";
 
 export const majorSchema = z.enum(MAJOR_LIST.map((major) => major.name));
+export const targetStudentsSchema = z.enum(
+  TARGET_STUDENTS_LIST.map((student) => student.name)
+);
 
 export const aiInputSchema = z.object({
   noticeId: z.string().describe("공지사항 아이디"),
@@ -21,7 +24,12 @@ export const aiOutputSchema = z.object({
   majorList: z
     .array(majorSchema)
     .describe(
-      "관심있을 만한 학과 목록. 관심있을 만한 학과가 없으면 '모든 학과'를 포함한다."
+      "관심있을 만한 학과 목록들을 포함한다. 모든 학과가 관심있을 만한 경우 존재하는 모든 학과를 포함한다."
+    ),
+  targetStudents: z
+    .array(targetStudentsSchema)
+    .describe(
+      "관심있을 만한 학년 목록들을 포함한다. 모든 학년이 관심있을 만한 경우 존재하는 모든 학년을 포함한다."
     ),
 });
 

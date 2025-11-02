@@ -13,6 +13,7 @@ export interface INotice extends Document {
   content: string;
   description: string;
   majorList: string[];
+  targetStudents: string[];
   attachedPictures: string[]; // 첨부된 사진 src 목록
   attachedFileNames: string[]; // 첨부된 파일 이름 목록
 }
@@ -42,6 +43,11 @@ const noticeSchema = new Schema<INotice>(
       type: String,
     },
     majorList: {
+      type: [String],
+      required: true,
+      default: [],
+    },
+    targetStudents: {
       type: [String],
       required: true,
       default: [],

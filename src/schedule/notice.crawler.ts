@@ -127,7 +127,7 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
   await page.close();
 
   for (const notice of createdNotices) {
-    const { description, majorList } = await extractWithAI({
+    const { description, majorList, targetStudents } = await extractWithAI({
       ...notice,
       noticeId: notice.id,
       author: notice.author.name,
@@ -138,6 +138,7 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
       ...notice,
       description,
       majorList,
+      targetStudents,
     });
 
     try {
@@ -169,7 +170,10 @@ const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {
 const noticeToMessage = async (notice: INotice) => {
   return [
     `# [(${notice.postedAt})[${notice.author.name}]${notice.title}](${notice.href})`,
-    `### ⚠️ ${notice?.majorList
+    `### ⚠️ ${notice.majorList
+      .map((v) => `<@&${ROLE_MAP[v as keyof typeof ROLE_MAP]}>`)
+      .join(" ")} 주목`,
+    `### ⚠️ ${notice.targetStudents
       .map((v) => `<@&${ROLE_MAP[v as keyof typeof ROLE_MAP]}>`)
       .join(" ")} 주목`,
     "",
