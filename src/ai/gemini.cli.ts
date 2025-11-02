@@ -9,11 +9,8 @@ import {
   mealInputSchema,
   mealOutputSchema,
 } from "../schema/ai.schema";
-import {
-  asyncExist,
-  execAsync as execCmdAsync,
-  extractJsonFromLlm,
-} from "../util";
+import { asyncExist, execCmdAsync, extractJsonFromLlm } from "../util";
+import { ImageOptimizer } from "./image-optimizer";
 
 export class GeminiCli {
   static GEMINI_EXEC = getEnv("GEMINI_EXEC");
@@ -38,14 +35,18 @@ export class GeminiCli {
     GeminiCli.isInitialized = true;
   }
 
-  public static async extractNoticeInfo(
-    noticeInfo: z.input<typeof aiInputSchema>,
-    pictures: { name: string; buffer: Buffer }[]
-  ): Promise<z.infer<typeof aiOutputSchema> | undefined> {
+  public static async extractInfo<
+    T extends { id: string },
+    O extends z.ZodSchema
+  >(
+    info: T,
+    pictures: { name: string; buffer: Buffer }[],
+    outputSchema: O,
+    systemPrompt: "notice" | "meal"
+  ): Promise<z.infer<O>> {
     await GeminiCli.init();
-
     // source에 첨부 사진들 저장
-    const noticeDir = path.join(GeminiCli.SOURCE_DIR, noticeInfo.noticeId);
+    const noticeDir = path.join(GeminiCli.SOURCE_DIR, info.id);
     try {
       await fs.promises.mkdir(noticeDir, { recursive: true });
       await Promise.all(
@@ -53,26 +54,34 @@ export class GeminiCli {
           const picPath = path.join(noticeDir, pic.name);
           // 파일 저장
           await fs.promises.writeFile(picPath, pic.buffer);
+
+          // 이미지 최적화
+          const imageOptimizer = new ImageOptimizer(picPath);
+          if (await imageOptimizer.shouldOptimize()) {
+            await imageOptimizer.optimize();
+          }
           console.log("writing pictures: ", pic.name);
           return pic;
         })
       );
 
       const geminiArgs = GeminiCli.buildGeminiArgs(
-        JSON.stringify(aiInputSchema.parse(noticeInfo)) +
+        JSON.stringify(aiInputSchema.parse(info)) +
           " " +
           pictures.map((pic) => `@${pic.name}`).join(" ")
       );
 
-      const excute = async () => {
+      const excute = async (): Promise<z.infer<typeof outputSchema>> => {
         const { stdout, stderr } = await execCmdAsync(
           GeminiCli.GEMINI_EXEC,
           geminiArgs,
           {
             cwd: getEnv("HOME"),
             env: {
-              GEMINI_SYSTEM_MD: GeminiCli.SYSTEM_NOTICE_PROMPT,
-              GEMINI_API_KEY: getEnv("GEMINI_API_KEY"),
+              GEMINI_SYSTEM_MD: {
+                notice: GeminiCli.SYSTEM_NOTICE_PROMPT,
+                meal: GeminiCli.SYSTEM_MEAL_PROMPT,
+              }[systemPrompt],
             },
           }
         );
@@ -81,26 +90,27 @@ export class GeminiCli {
           console.log("stderr: ", stderr);
         }
 
-        return extractJsonFromLlm(stdout, aiOutputSchema);
+        return extractJsonFromLlm(stdout, outputSchema, [
+          "response",
+        ]) as z.infer<typeof outputSchema>;
       };
 
-      let result: z.infer<typeof aiOutputSchema> | undefined;
+      let result: z.infer<typeof outputSchema> | undefined;
 
       for (let i = 0; i < 3; i++) {
         try {
           console.log(`Attempt ${i + 1}/3 to extract notice info`);
           result = await excute();
           console.log(`Successfully extracted notice info on attempt ${i + 1}`);
-          break;
+          return result;
         } catch (error) {
           console.error(`Attempt ${i + 1}/3 failed:`, error);
-          if (i === 2) {
-            console.error("All attempts failed for notice extraction");
-          }
         }
       }
 
-      return result;
+      throw new Error("All attempts failed for notice info extraction");
+    } catch (error) {
+      throw error;
     } finally {
       // 항상 정리
       try {
@@ -108,78 +118,6 @@ export class GeminiCli {
         console.log(`Cleaned up ${noticeDir}`);
       } catch (cleanupError) {
         console.error("Failed to cleanup notice directory:", cleanupError);
-      }
-    }
-  }
-
-  public static async extractMealInfo(
-    mealInfo: z.input<typeof mealInputSchema>,
-    pictures: { name: string; buffer: Buffer }[]
-  ): Promise<z.infer<typeof mealOutputSchema> | undefined> {
-    await GeminiCli.init();
-
-    // source에 첨부 사진들 저장
-    const mealDir = path.join(GeminiCli.SOURCE_DIR, "meal");
-
-    try {
-      await fs.promises.mkdir(mealDir, { recursive: true });
-      await Promise.all(
-        pictures.map(async (pic) => {
-          const picPath = path.join(mealDir, pic.name);
-          await fs.promises.writeFile(picPath, pic.buffer);
-          console.log("writing meal pictures: ", pic.name);
-        })
-      );
-
-      const geminiArgs = GeminiCli.buildGeminiArgs(
-        JSON.stringify(mealInputSchema.parse(mealInfo)) +
-          " " +
-          pictures.map((pic) => `@${pic.name}`).join(" ")
-      );
-
-      const excute = async () => {
-        const { stdout, stderr } = await execCmdAsync(
-          GeminiCli.GEMINI_EXEC,
-          geminiArgs,
-          {
-            cwd: getEnv("HOME"),
-            env: {
-              GEMINI_SYSTEM_MD: GeminiCli.SYSTEM_MEAL_PROMPT,
-            },
-          }
-        );
-
-        if (stderr) {
-          console.log("stderr: ", stderr);
-        }
-
-        return extractJsonFromLlm(stdout, mealOutputSchema);
-      };
-
-      let result: z.infer<typeof mealOutputSchema> | undefined;
-
-      for (let i = 0; i < 3; i++) {
-        try {
-          console.log(`Attempt ${i + 1}/3 to extract meal info`);
-          result = await excute();
-          console.log(`Successfully extracted meal info on attempt ${i + 1}`);
-          break;
-        } catch (error) {
-          console.error(`Attempt ${i + 1}/3 failed:`, error);
-          if (i === 2) {
-            console.error("All attempts failed for meal extraction");
-          }
-        }
-      }
-
-      return result;
-    } finally {
-      // 항상 정리
-      try {
-        await fs.promises.rm(mealDir, { recursive: true, force: true });
-        console.log(`Cleaned up ${mealDir}`);
-      } catch (cleanupError) {
-        console.error("Failed to cleanup meal directory:", cleanupError);
       }
     }
   }

@@ -4,8 +4,8 @@ import z from "zod";
 export const majorSchema = z.enum(MAJOR_LIST.map((major) => major.name));
 
 export const aiInputSchema = z.object({
-  author: z.string().describe("공지사항 작성기관"),
   noticeId: z.string().describe("공지사항 아이디"),
+  author: z.string().describe("공지사항 작성기관"),
   title: z.string().describe("공지사항 제목"),
   content: z.string().describe("공지사항 내용"),
   attachedPictures: z.array(z.string()).describe("첨부된 사진 목록"),

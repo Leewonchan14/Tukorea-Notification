@@ -1,6 +1,7 @@
 import { GeminiCli } from "@/ai/gemini.cli";
 import { sendWebHook } from "@/discord-webhook";
 import { getEnv } from "@/env";
+import { mealOutputSchema } from "@/schema/ai.schema";
 import { ISchoolMeal, SchoolMeal } from "@/schema/school-meal.schema";
 import { convertSrcToBuffer } from "@/util";
 import _ from "lodash";
@@ -32,7 +33,7 @@ export const schoolMealCrawler = queueing(
           const findSchoolMeal = await SchoolMeal.findOne({ src: src });
           if (findSchoolMeal) return undefined;
 
-          return await SchoolMeal.create({ src, place, rawLabel });
+          return { src, place, rawLabel };
         })
       )
     );
@@ -40,29 +41,39 @@ export const schoolMealCrawler = queueing(
     await page.close();
 
     filteredNewSchoolMeals.forEach(async (schoolMeal) => {
-      await sendWebHook(WEBHOOK_URL, await schoolMealToMessage(schoolMeal));
+      const { description } = await extractWithAI(schoolMeal);
+
+      const createdSchoolMeal = await SchoolMeal.create({
+        ...schoolMeal,
+        description,
+      });
+
+      await sendWebHook(
+        WEBHOOK_URL,
+        await schoolMealToMessage(createdSchoolMeal)
+      );
     });
   }
 );
 
-const schoolMealToMessage = async (schoolMeal: ISchoolMeal) => {
+const extractWithAI = async (schoolMeal: { src: string; rawLabel: string }) => {
   const attachedPictures = await convertSrcToBuffer(schoolMeal.src);
-  const llmReview = await GeminiCli.extractMealInfo(
+  return GeminiCli.extractInfo(
     {
+      id: "meal",
       rawLabel: schoolMeal.rawLabel,
       attachedPictures: [attachedPictures.name],
     },
-    [attachedPictures]
+    [attachedPictures],
+    mealOutputSchema,
+    "meal"
   );
+};
 
-  await SchoolMeal.findOneAndUpdate(
-    { src: schoolMeal.src },
-    { description: llmReview?.description ?? "" }
-  );
-
+const schoolMealToMessage = async (schoolMeal: ISchoolMeal) => {
   return [
     `# [${schoolMeal.place}](${schoolMeal.src})`,
     "",
-    llmReview?.description ?? "",
+    schoolMeal.description,
   ].join("\n");
 };

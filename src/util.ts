@@ -3,6 +3,7 @@ import { spawn, SpawnOptionsWithoutStdio } from "child_process";
 import createDOMPurify from "dompurify";
 import fs from "fs";
 import { JSDOM } from "jsdom";
+import _ from "lodash";
 import path from "path";
 import { slugify } from "transliteration";
 import z from "zod";
@@ -19,7 +20,7 @@ export const asyncExist = async (path: string): Promise<boolean> => {
   }
 };
 
-export const execAsync = (
+export const execCmdAsync = (
   command: string,
   args: string[],
   options: SpawnOptionsWithoutStdio
@@ -60,29 +61,26 @@ export const sanitizeHtmlForAi = (htmlString: string) => {
   return DOMPurify.sanitize(htmlString, {
     ALLOWED_ATTR: [],
   })
-    .replaceAll(/(\r\n|\n|\r|\t)/gm, "")
-    .replaceAll(/>\s+</gm, "");
+    .replaceAll(/<[^>]*>/g, "") //모든 tag 공백으로 설정
+    .replaceAll(/\s+/gm, " "); // 연속 공백만 정규화
 };
 
-export const extractJsonFromLlm = (
+export const extractJsonFromLlm = <T>(
   llmOutput: string,
-  outputSchema: z.ZodSchema<any>
+  outputSchema: z.ZodSchema<T>,
+  select: string[]
 ) => {
   const llmJson = new LlmJson();
-  const { text, json } = llmJson.extract(llmOutput);
+  const jsonData = _.get(JSON.parse(llmOutput), select.join("."));
+  const { text, json } = llmJson.extract(jsonData);
   console.log("text: ", text);
   console.log("json: ", json);
 
   const jsonResult = json.find((js) => outputSchema.safeParse(js).success);
+
   if (!jsonResult) {
     throw new Error(
-      `${
-        outputSchema.description
-      } 정보를 찾을 수 없습니다. \n llmOutput: ${llmOutput} \n text: ${text}\n json: ${JSON.stringify(
-        json,
-        null,
-        2
-      )}`
+      `extractJsonFromLlm error: llmOutput: ${llmOutput} \n jsonData: ${jsonData} text: ${text}\n`
     );
   }
 

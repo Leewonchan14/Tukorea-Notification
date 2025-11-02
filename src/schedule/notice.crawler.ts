@@ -1,12 +1,14 @@
 import { GeminiCli } from "@/ai/gemini.cli";
 import { sendWebHook } from "@/discord-webhook";
 import { getEnv } from "@/env";
+import { aiInputSchema, aiOutputSchema } from "@/schema/ai.schema";
 import { NoticeAuthor } from "@/schema/notice-athor.schema";
 import { INotice, Notice } from "@/schema/notice.schema";
 import { convertSrcToBuffer, sanitizeHtmlForAi } from "@/util";
 import { ROLE_MAP } from "@/webhook";
 import _ from "lodash";
 import { Page } from "playwright";
+import z from "zod";
 import { queueing } from "./queueing";
 
 const TARGET_DOMAIN = "https://www.tukorea.ac.kr";
@@ -14,10 +16,10 @@ const WEBHOOK_URL = getEnv("NOTICE_WEBHOOK");
 
 export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
   const page = await getPage();
-  await page.goto(`${TARGET_DOMAIN}/tukorea/7607/subview.do`);
-  await page.waitForSelector("a:has(span)", {
-    // timeout: 10000,
+  await page.goto(`${TARGET_DOMAIN}/tukorea/7607/subview.do`, {
+    waitUntil: "domcontentloaded",
   });
+  await page.waitForSelector("a:has(span)");
 
   const newNotices = await page.locator("a:has(span[class*='new'])").all();
   console.log("notice newNotices: ", newNotices.length);
@@ -72,96 +74,103 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
     )
   );
 
-  const createdNotices = await Promise.all(
-    filteredNewNotices.map(async ({ id, title, href, author, postedAt }) => {
-      await page.goto(href);
-      await page.waitForSelector(
-        "div[class='contents'] div[class='_fnctWrap']"
+  const createdNotices = [];
+
+  for (const { id, title, href, author, postedAt } of filteredNewNotices) {
+    await page.goto(href);
+    await page.waitForSelector("div[class='contents'] div[class='_fnctWrap']");
+
+    const outerHtml = await page
+      .locator("div[class='contents'] div[class='_fnctWrap']")
+      .innerHTML();
+    const content = sanitizeHtmlForAi(outerHtml);
+
+    const getPicture = async () => {
+      const noticeLocator = await page
+        .locator("div[class='contents'] div[class='_fnctWrap'] img")
+        .all();
+
+      const pictures = await Promise.all(
+        noticeLocator.map(async (v) => {
+          return v.getAttribute("src").then((src) => src?.trim());
+        })
       );
 
-      const outerHtml = await page
-        .locator("div[class='contents'] div[class='_fnctWrap']")
-        .innerHTML();
-      const content = sanitizeHtmlForAi(outerHtml);
+      return pictures.filter((v) => v !== undefined);
+    };
 
-      const getPicture = async () => {
-        const noticeLocator = await page
-          .locator("div[class='contents'] div[class='_fnctWrap'] img")
-          .all();
+    const attachedPictureSrcs = await getPicture();
 
-        const pictures = await Promise.all(
-          noticeLocator.map(async (v) => {
-            return v.getAttribute("src").then((src) => src?.trim());
-          })
-        );
+    const getAttachedFileNames = async () => {
+      const attachedFileLocators = await page
+        .locator("div[class='contents'] div[class='_fnctWrap'] .view-file a")
+        .all();
+      return await Promise.all(
+        attachedFileLocators.map((v) => v.innerText().then((v) => v.trim()))
+      );
+    };
 
-        return pictures.filter((v) => v !== undefined);
-      };
+    const attachedFileNames = await getAttachedFileNames();
 
-      const attachedPictureSrcs = await getPicture();
-
-      const getAttachedFileNames = async () => {
-        const attachedFileLocators = await page
-          .locator("div[class='contents'] div[class='_fnctWrap'] .view-file a")
-          .all();
-        return await Promise.all(
-          attachedFileLocators.map((v) => v.innerText().then((v) => v.trim()))
-        );
-      };
-
-      const attachedFileNames = await getAttachedFileNames();
-
-      return await Notice.create({
-        id,
-        href,
-        title,
-        author,
-        postedAt,
-        content,
-        attachedPictures: attachedPictureSrcs,
-        attachedFileNames: attachedFileNames,
-      });
-    })
-  );
+    createdNotices.push({
+      id,
+      href,
+      title,
+      author,
+      postedAt,
+      content,
+      attachedPictures: attachedPictureSrcs,
+      attachedFileNames: attachedFileNames,
+    });
+  }
 
   await page.close();
 
-  createdNotices.forEach(async (notice) => {
-    await sendWebHook(WEBHOOK_URL, await noticeToMessage(notice));
-  });
+  for (const notice of createdNotices) {
+    const { description, majorList } = await extractWithAI({
+      ...notice,
+      noticeId: notice.id,
+      author: notice.author.name,
+      title: notice.title ?? "",
+    });
+
+    const createdNotice = await Notice.create({
+      ...notice,
+      description,
+      majorList,
+    });
+
+    try {
+      await sendWebHook(WEBHOOK_URL, await noticeToMessage(createdNotice));
+    } catch (error) {
+      console.error(error);
+      await Notice.deleteOne({ id: notice.id });
+      console.error(`Notice ${notice.id} deleted`);
+      throw error;
+    }
+  }
 });
 
-const noticeToMessage = async (notice: INotice) => {
+const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {
   const attachedPictures = await Promise.all(
     notice.attachedPictures.map((src) => convertSrcToBuffer(src))
   );
 
-  const llmReview = await GeminiCli.extractNoticeInfo(
-    {
-      noticeId: notice.id,
-      title: notice.title,
-      content: notice.content,
-      attachedFileNames: notice.attachedFileNames,
-      attachedPictures: attachedPictures.map((v) => v.name),
-      author: notice.author.name,
-    },
-    attachedPictures
+  return GeminiCli.extractInfo(
+    { ...notice, id: notice.noticeId },
+    attachedPictures,
+    aiOutputSchema,
+    "notice"
   );
+};
 
-  await Notice.findOneAndUpdate(
-    { id: notice.id },
-    {
-      description: llmReview?.description ?? "",
-      majorList: llmReview?.majorList ?? [],
-    }
-  );
-
+const noticeToMessage = async (notice: INotice) => {
   return [
     `# [(${notice.postedAt})[${notice.author.name}]${notice.title}](${notice.href})`,
-    `### ⚠️ ${llmReview?.majorList
-      .map((v) => `<@&${ROLE_MAP[v]}>`)
+    `### ⚠️ ${notice?.majorList
+      .map((v) => `<@&${ROLE_MAP[v as keyof typeof ROLE_MAP]}>`)
       .join(" ")} 주목`,
     "",
-    llmReview ? llmReview?.description : "",
+    notice.description,
   ].join("\n");
 };
