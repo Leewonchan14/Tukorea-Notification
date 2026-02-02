@@ -41,7 +41,7 @@ export class GeminiCli {
     pictures: { name: string; buffer: Buffer }[],
     inputSchema: z.ZodSchema<T>,
     outputSchema: O,
-    systemPrompt: "notice" | "meal"
+    systemPrompt: "notice" | "meal",
   ): Promise<z.infer<O>> {
     await GeminiCli.init();
     // source에 첨부 사진들 저장
@@ -61,13 +61,13 @@ export class GeminiCli {
           }
           console.log("writing pictures: ", pic.name);
           return pic;
-        })
+        }),
       );
 
       const geminiArgs = GeminiCli.buildGeminiArgs(
         JSON.stringify(inputSchema.parse(input)) +
           " " +
-          pictures.map((pic) => `@${pic.name}`).join(" ")
+          pictures.map((pic) => `@${pic.name}`).join(" "),
       );
 
       const excute = async (): Promise<z.infer<typeof outputSchema>> => {
@@ -75,14 +75,14 @@ export class GeminiCli {
           GeminiCli.GEMINI_EXEC,
           geminiArgs,
           {
-            cwd: getEnv("HOME"),
+            cwd: GeminiCli.SOURCE_DIR,
             env: {
               GEMINI_SYSTEM_MD: {
                 notice: GeminiCli.SYSTEM_NOTICE_PROMPT,
                 meal: GeminiCli.SYSTEM_MEAL_PROMPT,
               }[systemPrompt],
             },
-          }
+          },
         );
 
         if (stderr) {
@@ -123,7 +123,7 @@ export class GeminiCli {
 
   private static buildGeminiArgs = (
     input: string,
-    model: string = "gemini-2.5-flash"
+    model: string = "gemini-2.5-flash",
   ) => {
     return [
       "-p",
@@ -153,7 +153,7 @@ ${JSON.stringify(_.omit(z.toJSONSchema(aiInputSchema), ["$schema"]), null, 2)}
 ${JSON.stringify(
   _.omit(z.toJSONSchema(aiOutputSchema), ["$schema"]),
   null,
-  2
+  2,
 )}`;
 
   if (!(await asyncExist(GeminiCli.SYSTEM_NOTICE_PROMPT))) {
@@ -175,7 +175,7 @@ ${JSON.stringify(_.omit(z.toJSONSchema(mealInputSchema), ["$schema"]), null, 2)}
 ${JSON.stringify(
   _.omit(z.toJSONSchema(mealOutputSchema), ["$schema"]),
   null,
-  2
+  2,
 )}`;
 
   if (!(await asyncExist(GeminiCli.SYSTEM_MEAL_PROMPT))) {

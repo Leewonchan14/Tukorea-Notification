@@ -27,7 +27,6 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
   }
 
   const newNotices = await page.locator("a:has(span[class*='new'])").all();
-  console.log("notice newNotices: ", newNotices.length);
 
   const filteredNewNotices = _.compact(
     await Promise.all(
@@ -65,7 +64,7 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
         const author = await NoticeAuthor.findOneAndUpdate(
           { name: authorName },
           { name: authorName },
-          { upsert: true, new: true }
+          { upsert: true, new: true },
         );
 
         return {
@@ -75,8 +74,8 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
           author,
           postedAt,
         };
-      })
-    )
+      }),
+    ),
   );
 
   const createdNotices = [];
@@ -98,7 +97,7 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
       const pictures = await Promise.all(
         noticeLocator.map(async (v) => {
           return v.getAttribute("src").then((src) => src?.trim());
-        })
+        }),
       );
 
       return pictures.filter((v) => v !== undefined);
@@ -111,7 +110,7 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
         .locator("div[class='contents'] div[class='_fnctWrap'] .view-file a")
         .all();
       return await Promise.all(
-        attachedFileLocators.map((v) => v.innerText().then((v) => v.trim()))
+        attachedFileLocators.map((v) => v.innerText().then((v) => v.trim())),
       );
     };
 
@@ -159,7 +158,7 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
 
 const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {
   const attachedPictures = await Promise.all(
-    notice.attachedPictures.map((src) => convertSrcToBuffer(src))
+    notice.attachedPictures.map((src) => convertSrcToBuffer(src)),
   );
 
   return GeminiCli.extractInfo(
@@ -168,7 +167,7 @@ const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {
     attachedPictures,
     aiInputSchema,
     aiOutputSchema,
-    "notice"
+    "notice",
   );
 };
 

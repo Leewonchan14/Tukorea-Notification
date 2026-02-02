@@ -23,13 +23,14 @@ export const asyncExist = async (path: string): Promise<boolean> => {
 export const execCmdAsync = (
   command: string,
   args: string[],
-  options: SpawnOptionsWithoutStdio
+  options: SpawnOptionsWithoutStdio,
 ): Promise<{ stdout: string; stderr: string }> => {
   return new Promise((resolve, reject) => {
     let stdout = "";
     let stderr = "";
-    console.log("execAsync: ", command, args, options);
+    console.log("execAsync: ", command, args.join(" "), options);
     const child = spawn(command, args, {
+      ...options,
       env: {
         HOME: getEnv("HOME"),
         GEMINI_API_KEY: getEnv("GEMINI_API_KEY"),
@@ -68,7 +69,7 @@ export const sanitizeHtmlForAi = (htmlString: string) => {
 export const extractJsonFromLlm = <T>(
   llmOutput: string,
   outputSchema: z.ZodSchema<T>,
-  select: string[]
+  select: string[],
 ) => {
   const llmJson = new LlmJson();
   const jsonData = _.get(JSON.parse(llmOutput), select.join("."));
@@ -80,7 +81,7 @@ export const extractJsonFromLlm = <T>(
 
   if (!jsonResult) {
     throw new Error(
-      `extractJsonFromLlm error: llmOutput: ${llmOutput} \n jsonData: ${jsonData} text: ${text}\n`
+      `extractJsonFromLlm error: llmOutput: ${llmOutput} \n jsonData: ${jsonData} text: ${text}\n`,
     );
   }
 
