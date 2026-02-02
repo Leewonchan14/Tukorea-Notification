@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env.dev
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 3g
+    volumes:
+      - ./src:/app/src
+
+volumes:
+  mongo_data:
