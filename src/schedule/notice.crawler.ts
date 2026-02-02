@@ -19,7 +19,12 @@ export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
   await page.goto(`${TARGET_DOMAIN}/tukorea/7607/subview.do`, {
     waitUntil: "domcontentloaded",
   });
-  await page.waitForSelector("a:has(span)");
+  try {
+    await page.waitForSelector("a:has(span[class*='new'])");
+  } catch {
+    console.log("no new notices");
+    return;
+  }
 
   const newNotices = await page.locator("a:has(span[class*='new'])").all();
   console.log("notice newNotices: ", newNotices.length);
