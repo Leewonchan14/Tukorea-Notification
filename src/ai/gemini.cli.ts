@@ -1,3 +1,4 @@
+import { ArrayQueue } from "@/queue";
 import fs from "fs";
 import _ from "lodash";
 import path from "path";
@@ -18,7 +19,7 @@ export class GeminiCli {
   static SYSTEM_NOTICE_PROMPT = `${getEnv("HOME")}/.gemini/notice.md`;
   static SYSTEM_MEAL_PROMPT = `${getEnv("HOME")}/.gemini/meal.md`;
   static isInitialized = false;
-  static QUEUE: { id: string; logic: () => Promise<any> }[] = [];
+  static QUEUE = new ArrayQueue();
 
   public static async init(): Promise<void> {
     if (GeminiCli.isInitialized) {
@@ -44,7 +45,7 @@ export class GeminiCli {
     outputSchema: O,
     systemPrompt: "notice" | "meal",
   ): Promise<z.infer<O>> {
-    const logic = async () => {
+    return await GeminiCli.QUEUE.enqueue(async () => {
       await GeminiCli.init();
       // source에 첨부 사진들 저장
       const noticeDir = path.join(GeminiCli.SOURCE_DIR, id);
@@ -123,18 +124,7 @@ export class GeminiCli {
           console.error("Failed to cleanup notice directory:", cleanupError);
         }
       }
-    };
-
-    GeminiCli.QUEUE.push({ id, logic });
-
-    while (GeminiCli.QUEUE[0]?.id !== id) {
-      await wait(1500);
-    }
-
-    const result = await GeminiCli.QUEUE[0].logic();
-    GeminiCli.QUEUE.shift();
-
-    return result;
+    });
   }
 
   private static buildGeminiArgs = (

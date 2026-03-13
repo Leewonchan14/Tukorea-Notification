@@ -36,7 +36,7 @@ const coreLogic = async () => {
 
   const findeNotices = await Notice.find({ id: { $in: newNoticeIds } });
 
-  for (const [i, el] of newNotices.entries()) {
+  newNotices.forEach(async (el, i) => {
     const id = newNoticeIds[i];
     if (!id) return;
 
@@ -98,14 +98,14 @@ const coreLogic = async () => {
     console.log(noticeToMessage(createdNotice));
 
     await sendWebHook(WEBHOOK_URL, await noticeToMessage(createdNotice));
-  }
+  });
 };
 
 const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {
   const attachedPictures: Awaited<ReturnType<typeof convertSrcToBuffer>>[] = [];
-  notice.attachedPictures.forEach(async (src) => {
+  for (const src of notice.attachedPictures) {
     attachedPictures.push(await convertSrcToBuffer(src));
-  });
+  }
 
   return GeminiCli.extractInfo(
     notice.noticeId,

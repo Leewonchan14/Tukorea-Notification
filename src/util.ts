@@ -28,7 +28,7 @@ export const execCmdAsync = (
   args: string[],
   options: SpawnOptionsWithoutStdio,
 ): Promise<{ stdout: string; stderr: string }> => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     let stdout = "";
     let stderr = "";
     console.log("execAsync: ", command, args.join(" "), options);
