@@ -123,7 +123,7 @@ export class GeminiCli {
 
   private static buildGeminiArgs = (
     input: string,
-    model: string = "gemini-3-flash",
+    model: string = "gemini-3-flash-preview",
   ) => {
     return [
       "-p",

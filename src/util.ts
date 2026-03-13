@@ -80,10 +80,21 @@ export const extractJsonFromLlm = <T>(
   return outputSchema.parse(jsonResult);
 };
 
-export const convertSrcToBuffer = async (src: string) => {
-  const name = slugify(path.basename(src), { lowercase: true });
-  const buffer = await fetch(src)
-    .then((v) => v.arrayBuffer())
-    .then((v) => Buffer.from(v));
-  return { name, buffer };
+export const convertSrcToBuffer = async (
+  src: string,
+  retryCount = 1,
+): Promise<{ name: string; buffer: Buffer }> => {
+  if (retryCount > 3) {
+    throw new Error(`convertSrcToBuffer error: ${src}`);
+  }
+  try {
+    const name = slugify(path.basename(src), { lowercase: true });
+    const buffer = await fetch(src)
+      .then((v) => v.arrayBuffer())
+      .then((v) => Buffer.from(v));
+    return { name, buffer };
+  } catch (error) {
+    console.error("convertSrcToBuffer error: ", error);
+    return convertSrcToBuffer(src, retryCount + 1);
+  }
 };

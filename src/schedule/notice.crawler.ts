@@ -102,9 +102,10 @@ const coreLogic = async () => {
 };
 
 const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {
-  const attachedPictures = await Promise.all(
-    notice.attachedPictures.map((src) => convertSrcToBuffer(src)),
-  );
+  const attachedPictures: Awaited<ReturnType<typeof convertSrcToBuffer>>[] = [];
+  notice.attachedPictures.forEach(async (src) => {
+    attachedPictures.push(await convertSrcToBuffer(src));
+  });
 
   return GeminiCli.extractInfo(
     notice.noticeId,
