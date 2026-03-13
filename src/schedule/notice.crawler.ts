@@ -36,7 +36,7 @@ const coreLogic = async () => {
 
   const findeNotices = await Notice.find({ id: { $in: newNoticeIds } });
 
-  newNotices.forEach(async (el, i) => {
+  for (const [i, el] of newNotices.entries()) {
     const id = newNoticeIds[i];
     if (!id) return;
 
@@ -98,7 +98,7 @@ const coreLogic = async () => {
     console.log(noticeToMessage(createdNotice));
 
     await sendWebHook(WEBHOOK_URL, await noticeToMessage(createdNotice));
-  });
+  }
 };
 
 const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {
