@@ -1,90 +1,79 @@
-// import { sendWebHook } from "@/discord-webhook";
-// import { getEnv } from "@/env";
-// import {
-//   DormitoryNotice,
-//   IDormitoryNotice,
-// } from "@/schema/dormitory-notice.schema";
-// import { NoticeAuthor } from "@/schema/notice-athor.schema";
-// import _ from "lodash";
-// import { Page } from "playwright";
-// import { queueing } from "./queueing";
+import { sendWebHook } from "@/discord-webhook";
+import { getEnv } from "@/env";
+import {
+  DormitoryNotice,
+  IDormitoryNotice,
+} from "@/schema/dormitory-notice.schema";
+import { NoticeAuthor } from "@/schema/notice-athor.schema";
+import { wait } from "@/util";
+import * as cheerio from "cheerio";
 
-// const TARGET_DOMAIN = "https://www.tukorea.ac.kr";
-// const WEBHOOK_URL = getEnv("DORMITORY_NOTICE_WEBHOOK");
+const TARGET_DOMAIN = "https://dorm.tukorea.ac.kr";
+const WEBHOOK_URL = getEnv("DORMITORY_NOTICE_WEBHOOK");
 
-// export const dormitoryNoticeCrawler = queueing(
-//   async (getPage: () => Promise<Page>) => {
-//     const page = await getPage();
-//     await page.goto("https://dorm.tukorea.ac.kr/dorm/2630/subview.do", {
-//       waitUntil: "domcontentloaded",
-//     });
-//     await page.waitForSelector("a:has(span)");
+export const dormitoryNoticeCrawler = async (sleepSec: number) => {
+  while (true) {
+    coreLogic();
+    await wait(sleepSec * 1000);
+  }
+};
 
-//     const newNotices = await page.locator("a:has(span[class*='new'])").all();
-//     console.log("dormitory notice newNotices: ", newNotices.length);
+const coreLogic = async () => {
+  const windowHtml = await fetch(`${TARGET_DOMAIN}/dorm/2630/subview.do`).then(
+    (res) => res.text(),
+  );
 
-//     const filteredNewNotices = _.compact(
-//       await Promise.all(
-//         newNotices.map(async (notice) => {
-//           const id = await notice.locator("dl[class='num'] > dd").textContent();
+  const $ = cheerio.load(windowHtml);
 
-//           if (!id) {
-//             throw new Error("id is not found");
-//           }
+  const newNotices = $("a:has(span[class*='new'])")
+    .get()
+    .map((n) => $(n));
 
-//           const findNotice = await DormitoryNotice.findOne({ id: id });
-//           if (findNotice) return undefined;
+  const newNoticeIds = newNotices.map((el) => {
+    return el.find("dl[class='num'] > dd").text().trim();
+  });
 
-//           const linkHref = await notice
-//             .getAttribute("href")
-//             .then((v) => v?.trim());
+  const findNotices = await DormitoryNotice.find({ id: { $in: newNoticeIds } });
 
-//           const href = `${TARGET_DOMAIN}${linkHref}?layout=unknown`;
+  newNotices.forEach(async (el, i) => {
+    const id = newNoticeIds[i];
+    if (!id) return;
 
-//           const title = await notice
-//             .locator("div[class='title'] > strong")
-//             .textContent()
-//             .then((v) => v?.trim());
+    const findNotice = findNotices.find((notice) => notice.id === id);
+    if (findNotice) return;
 
-//           const authorName = await notice
-//             .locator("dl[class='writer'] > dd")
-//             .textContent()
-//             .then((v) => v?.trim());
+    const authorName = el.find("dl[class='writer'] > dd").text().trim();
 
-//           const postedAt = await notice
-//             .locator("dl[class='date'] > dd")
-//             .textContent()
-//             .then((v) => v?.trim());
+    const author = await NoticeAuthor.findOneAndUpdate(
+      { name: authorName },
+      { name: authorName },
+      { upsert: true, new: true },
+    );
 
-//           const author = await NoticeAuthor.findOneAndUpdate(
-//             { name: authorName },
-//             { name: authorName },
-//             { upsert: true, new: true }
-//           );
+    const title = el.find("div[class='title'] > strong").text().trim();
+    const postedAt = el.find("dl[class='date'] > dd").text().trim();
 
-//           return await DormitoryNotice.create({
-//             id,
-//             href,
-//             title,
-//             author,
-//             postedAt,
-//           });
-//         })
-//       )
-//     );
+    const linkHref = el.attr("href")?.trim();
+    const href = `${TARGET_DOMAIN}${linkHref}?layout=unknown`;
 
-//     await page.close();
+    const createdNotice = await DormitoryNotice.create({
+      id,
+      href,
+      title,
+      author,
+      postedAt,
+    });
 
-//     filteredNewNotices.forEach(async (notice) => {
-//       await sendWebHook(WEBHOOK_URL, noticeToMessage(notice));
-//     });
-//   }
-// );
+    console.log(noticeToMessage(createdNotice));
 
-// const noticeToMessage = (notice: IDormitoryNotice) => {
-//   return [
-//     `[(${notice.postedAt})[${notice.author.name}]`,
-//     `${notice.title}](${notice.href})\n`,
-//     `작성기관: ${notice.author.name}`,
-//   ].join("");
-// };
+    await sendWebHook(WEBHOOK_URL, noticeToMessage(createdNotice));
+  });
+};
+
+const noticeToMessage = (notice: IDormitoryNotice) => {
+  return [
+    `[(${notice.postedAt})[${notice.author.name}]`,
+    `${notice.title}](${notice.href})\n`,
+    `작성기관: ${notice.author.name}`,
+  ].join("");
+};

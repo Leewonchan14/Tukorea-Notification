@@ -1,19 +1,12 @@
+import { dormitoryNoticeCrawler } from "./dormitory-notice.crawler";
 import { noticeCrawler } from "./notice.crawler";
 
 export const scheduleTasks = async () => {
+  // Notice
   noticeCrawler(10 * 60); // 10분 마다
-  // // Notice
-  // cron.schedule(
-  //   "0-59/10 * * * *", // 10분 마다
-  //   withErorrWebHook(noticeCrawler),
-  // );
 
-  // // Dormitory Notice
-  // withErorrWebHook(() => dormitoryNoticeCrawler(getPage))();
-  // cron.schedule(
-  //   "3-59/15 * * * *", // 15분 마다
-  //   withErorrWebHook(() => dormitoryNoticeCrawler(getPage)),
-  // );
+  // Dormitory Notice
+  dormitoryNoticeCrawler(15 * 60); // 15분 마다
 
   // // School Meal
   // withErorrWebHook(() => schoolMealCrawler(getPage))();
