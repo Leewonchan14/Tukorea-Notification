@@ -4,157 +4,103 @@ import { getEnv } from "@/env";
 import { aiInputSchema, aiOutputSchema } from "@/schema/ai.schema";
 import { NoticeAuthor } from "@/schema/notice-athor.schema";
 import { INotice, Notice } from "@/schema/notice.schema";
-import { convertSrcToBuffer, sanitizeHtmlForAi } from "@/util";
+import { convertSrcToBuffer, wait } from "@/util";
 import { ROLE_MAP } from "@/webhook";
-import _ from "lodash";
-import { Page } from "playwright";
+import * as cheerio from "cheerio";
+import { Document } from "mongoose";
 import z from "zod";
-import { queueing } from "./queueing";
 
 const TARGET_DOMAIN = "https://www.tukorea.ac.kr";
 const WEBHOOK_URL = getEnv("NOTICE_WEBHOOK");
 
-export const noticeCrawler = queueing(async (getPage: () => Promise<Page>) => {
-  const page = await getPage();
-  await page.goto(`${TARGET_DOMAIN}/tukorea/7607/subview.do`, {
-    waitUntil: "domcontentloaded",
-  });
-  try {
-    await page.waitForSelector("a:has(span[class*='new'])");
-  } catch {
-    console.log("no new notices");
-    return;
+export const noticeCrawler = async (sleepSec: number) => {
+  while (true) {
+    coreLogic();
+    await wait(sleepSec * 1000);
   }
+};
 
-  const newNotices = await page.locator("a:has(span[class*='new'])").all();
+const coreLogic = async () => {
+  const windowHtml = await fetch(
+    `${TARGET_DOMAIN}/tukorea/7607/subview.do`,
+  ).then((res) => res.text());
 
-  const filteredNewNotices = _.compact(
-    await Promise.all(
-      newNotices.map(async (notice) => {
-        const id = await notice.locator("dl[class='num'] > dd").textContent();
+  const $ = cheerio.load(windowHtml);
 
-        if (!id) {
-          throw new Error("id is not found");
-        }
+  const newNotices = $("a:has(span[class*='new'])")
+    .get()
+    .map((n) => $(n));
 
-        const findNotice = await Notice.findOne({ id: id });
-        if (findNotice) return undefined;
+  const newNoticeIds = newNotices.map((el) => {
+    return el.find("dl[class='num'] > dd").text();
+  });
 
-        const linkHref = await notice
-          .getAttribute("href")
-          .then((v) => v?.trim());
+  const findeNotices = await Notice.find({ id: { $in: newNoticeIds } });
 
-        const href = `${TARGET_DOMAIN}${linkHref}?layout=unknown`;
+  newNotices.forEach(async (el, i) => {
+    const id = newNoticeIds[i];
+    if (!id) return;
 
-        const title = await notice
-          .locator("div[class='title'] > strong")
-          .textContent()
-          .then((v) => v?.trim());
+    const findNotice = findeNotices.find((notice) => notice.id === id);
+    if (findNotice) return;
 
-        const authorName = await notice
-          .locator("dl[class='writer'] > dd")
-          .textContent()
-          .then((v) => v?.trim());
+    const authorName = el.find("dl[class='writer'] > dd").text().trim();
 
-        const postedAt = await notice
-          .locator("dl[class='date'] > dd")
-          .textContent()
-          .then((v) => v?.trim());
+    const author = await NoticeAuthor.findOneAndUpdate(
+      { name: authorName },
+      { name: authorName },
+      { upsert: true, new: true },
+    );
 
-        const author = await NoticeAuthor.findOneAndUpdate(
-          { name: authorName },
-          { name: authorName },
-          { upsert: true, new: true },
-        );
+    const title = el.find("div[class='title'] > strong").text().trim();
+    const postedAt = el.find("dl[class='date'] > dd").text().trim();
 
-        return {
-          id,
-          href,
-          title,
-          author,
-          postedAt,
-        };
-      }),
-    ),
-  );
+    const linkHref = el.attr("href")?.trim();
+    const href = `${TARGET_DOMAIN}${linkHref}?layout=unknown`;
+    const fetchHref = `${TARGET_DOMAIN}${linkHref}`;
 
-  const createdNotices = [];
+    const $content = cheerio.load(await fetch(fetchHref).then((r) => r.text()));
+    const content = $content("div[class='_fnctWrap']")
+      .text()
+      .replaceAll(/\s+/gm, " "); // 연속 공백만 정규화;
 
-  for (const { id, title, href, author, postedAt } of filteredNewNotices) {
-    await page.goto(href);
-    await page.waitForSelector("div[class='contents'] div[class='_fnctWrap']");
+    const pictures = $content("div[class='_fnctWrap'] img")
+      .map((_, el) => el.attribs.src?.trim())
+      .toArray();
 
-    const outerHtml = await page
-      .locator("div[class='contents'] div[class='_fnctWrap']")
-      .innerHTML();
-    const content = sanitizeHtmlForAi(outerHtml);
+    const attachedFileNames = $content("div[class='_fnctWrap'] .view-file a")
+      .map((_, el) => $(el).html()?.trim())
+      .get();
 
-    const getPicture = async () => {
-      const noticeLocator = await page
-        .locator("div[class='contents'] div[class='_fnctWrap'] img")
-        .all();
+    // extract ai
+    const { description, majorList, targetStudents } = await extractWithAI({
+      noticeId: id,
+      author: author.name,
+      title,
+      content,
+      attachedPictures: pictures,
+      attachedFileNames: attachedFileNames,
+    });
 
-      const pictures = await Promise.all(
-        noticeLocator.map(async (v) => {
-          return v.getAttribute("src").then((src) => src?.trim());
-        }),
-      );
-
-      return pictures.filter((v) => v !== undefined);
-    };
-
-    const attachedPictureSrcs = await getPicture();
-
-    const getAttachedFileNames = async () => {
-      const attachedFileLocators = await page
-        .locator("div[class='contents'] div[class='_fnctWrap'] .view-file a")
-        .all();
-      return await Promise.all(
-        attachedFileLocators.map((v) => v.innerText().then((v) => v.trim())),
-      );
-    };
-
-    const attachedFileNames = await getAttachedFileNames();
-
-    createdNotices.push({
+    const createdNotice = await Notice.create({
       id,
       href,
       title,
       author,
       postedAt,
       content,
-      attachedPictures: attachedPictureSrcs,
+      attachedPictures: pictures,
       attachedFileNames: attachedFileNames,
-    });
-  }
-
-  await page.close();
-
-  for (const notice of createdNotices) {
-    const { description, majorList, targetStudents } = await extractWithAI({
-      ...notice,
-      noticeId: notice.id,
-      author: notice.author.name,
-      title: notice.title ?? "",
-    });
-
-    const createdNotice = await Notice.create({
-      ...notice,
       description,
       majorList,
       targetStudents,
     });
 
-    try {
-      await sendWebHook(WEBHOOK_URL, await noticeToMessage(createdNotice));
-    } catch (error) {
-      console.error(error);
-      await Notice.deleteOne({ id: notice.id });
-      console.error(`Notice ${notice.id} deleted`);
-      throw error;
-    }
-  }
-});
+    console.log(noticeToMessage(createdNotice));
+
+    await sendWebHook(WEBHOOK_URL, await noticeToMessage(createdNotice));
+  });
+};
 
 const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {
   const attachedPictures = await Promise.all(

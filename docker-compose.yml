@@ -9,11 +9,6 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: "2.0"
-          memory: 1.5g
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
 
@@ -30,12 +25,6 @@ services:
       timeout: 30s
       retries: 5
     restart: always
-
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 768M
 
 volumes:
   mongo_data:

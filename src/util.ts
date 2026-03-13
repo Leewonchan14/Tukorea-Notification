@@ -1,13 +1,16 @@
 import { LlmJson } from "@solvers-hub/llm-json/dist/src/index";
 import { spawn, SpawnOptionsWithoutStdio } from "child_process";
-import createDOMPurify from "dompurify";
 import fs from "fs";
-import { JSDOM } from "jsdom";
 import _ from "lodash";
 import path from "path";
 import { slugify } from "transliteration";
 import z from "zod";
 import { getEnv } from "./env";
+
+export const wait = async (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 export const asyncExist = async (path: string): Promise<boolean> => {
   if (path.startsWith("~")) {
     path = path.replace("~", getEnv("HOME"));
@@ -53,17 +56,6 @@ export const execCmdAsync = (
       resolve({ stdout, stderr });
     });
   });
-};
-
-const window = new JSDOM("").window;
-const DOMPurify = createDOMPurify(window);
-
-export const sanitizeHtmlForAi = (htmlString: string) => {
-  return DOMPurify.sanitize(htmlString, {
-    ALLOWED_ATTR: [],
-  })
-    .replaceAll(/<[^>]*>/g, "") //모든 tag 공백으로 설정
-    .replaceAll(/\s+/gm, " "); // 연속 공백만 정규화
 };
 
 export const extractJsonFromLlm = <T>(
