@@ -10,7 +10,11 @@ const getSrcsUrl = (bookCode: string) =>
 
 export const schoolMealCrawler = async (sleepSec: number) => {
   while (true) {
-    await coreLogic();
+    try {
+      await coreLogic();
+    } catch (error) {
+      console.error("Error in schoolMealCrawler:", error);
+    }
     await wait(sleepSec * 1000);
   }
 };
@@ -31,19 +35,22 @@ const coreLogic = async () => {
     }[]
   ).map(({ src }) => `https:${src}`);
 
-  srcs.forEach(async (src) => {
-    const findSchoolMeal = await SchoolMeal.findOne({ src: src });
-    if (findSchoolMeal) return;
+  for (const src of srcs) {
+    try {
+      const findSchoolMeal = await SchoolMeal.findOne({ src: src });
+      if (findSchoolMeal) continue;
 
-    await SchoolMeal.create({ src });
+      await SchoolMeal.create({ src });
 
-    const msg = schoolMealToMessage({ src });
-    console.log(msg);
+      const msg = schoolMealToMessage({ src });
+      console.log(msg);
 
-    await sendWebHook(WEBHOOK_URL, msg);
-  });
+      await sendWebHook(WEBHOOK_URL, msg);
+    } catch (err) {
+      console.error("Error processing school meal:", err);
+    }
+  }
 };
-
 const schoolMealToMessage = (schoolMeal: Pick<ISchoolMeal, "src">) => {
   return `${schoolMeal.src}`;
 };

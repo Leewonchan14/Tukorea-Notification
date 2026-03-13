@@ -21,7 +21,6 @@
     "express": "^5.1.0",
     "lodash": "^4.17.21",
     "mongoose": "^8.18.1",
-    "node-cron": "^4.2.1",
     "sharp": "^0.34.4",
     "transliteration": "^2.3.5",
     "zod": "^4.1.12"
@@ -31,7 +30,6 @@
     "@types/jsdom": "^27.0.0",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.3.3",
-    "@types/node-cron": "^3.0.11",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"

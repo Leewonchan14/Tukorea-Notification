@@ -14,7 +14,11 @@ const WEBHOOK_URL = getEnv("NOTICE_WEBHOOK");
 
 export const noticeCrawler = async (sleepSec: number) => {
   while (true) {
-    coreLogic();
+    try {
+      await coreLogic();
+    } catch (error) {
+      console.error("Error in noticeCrawler:", error);
+    }
     await wait(sleepSec * 1000);
   }
 };
@@ -36,69 +40,76 @@ const coreLogic = async () => {
 
   const findeNotices = await Notice.find({ id: { $in: newNoticeIds } });
 
-  newNotices.forEach(async (el, i) => {
-    const id = newNoticeIds[i];
-    if (!id) return;
+  for (let i = 0; i < newNotices.length; i++) {
+    try {
+      const el = newNotices[i];
+      const id = newNoticeIds[i];
+      if (!id || !el) continue;
 
-    const findNotice = findeNotices.find((notice) => notice.id === id);
-    if (findNotice) return;
+      const findNotice = findeNotices.find((notice) => notice.id === id);
+      if (findNotice) continue;
 
-    const authorName = el.find("dl[class='writer'] > dd").text().trim();
+      const authorName = el.find("dl[class='writer'] > dd").text().trim();
 
-    const author = await NoticeAuthor.findOneAndUpdate(
-      { name: authorName },
-      { name: authorName },
-      { upsert: true, new: true },
-    );
+      const author = await NoticeAuthor.findOneAndUpdate(
+        { name: authorName },
+        { name: authorName },
+        { upsert: true, new: true },
+      );
 
-    const title = el.find("div[class='title'] > strong").text().trim();
-    const postedAt = el.find("dl[class='date'] > dd").text().trim();
+      const title = el.find("div[class='title'] > strong").text().trim();
+      const postedAt = el.find("dl[class='date'] > dd").text().trim();
 
-    const linkHref = el.attr("href")?.trim();
-    const href = `${TARGET_DOMAIN}${linkHref}?layout=unknown`;
-    const fetchHref = `${TARGET_DOMAIN}${linkHref}`;
+      const linkHref = el.attr("href")?.trim();
+      const href = `${TARGET_DOMAIN}${linkHref}?layout=unknown`;
+      const fetchHref = `${TARGET_DOMAIN}${linkHref}`;
 
-    const $content = cheerio.load(await fetch(fetchHref).then((r) => r.text()));
-    const content = $content("div[class='_fnctWrap']")
-      .text()
-      .replaceAll(/\s+/gm, " "); // 연속 공백만 정규화;
+      const $content = cheerio.load(
+        await fetch(fetchHref).then((r) => r.text()),
+      );
+      const content = $content("div[class='_fnctWrap']")
+        .text()
+        .replaceAll(/\s+/gm, " "); // 연속 공백만 정규화;
 
-    const pictures = $content("div[class='_fnctWrap'] img")
-      .map((_, el) => el.attribs.src?.trim())
-      .toArray();
+      const pictures = $content("div[class='_fnctWrap'] img")
+        .map((_, el) => el.attribs.src?.trim())
+        .toArray();
 
-    const attachedFileNames = $content("div[class='_fnctWrap'] .view-file a")
-      .map((_, el) => $(el).html()?.trim())
-      .get();
+      const attachedFileNames = $content("div[class='_fnctWrap'] .view-file a")
+        .map((_, el) => $(el).html()?.trim())
+        .get();
 
-    // extract ai
-    const { description, majorList, targetStudents } = await extractWithAI({
-      noticeId: id,
-      author: author.name,
-      title,
-      content,
-      attachedPictures: pictures,
-      attachedFileNames: attachedFileNames,
-    });
+      // extract ai
+      const { description, majorList, targetStudents } = await extractWithAI({
+        noticeId: id,
+        author: author.name,
+        title,
+        content,
+        attachedPictures: pictures,
+        attachedFileNames: attachedFileNames,
+      });
 
-    const createdNotice = await Notice.create({
-      id,
-      href,
-      title,
-      author,
-      postedAt,
-      content,
-      attachedPictures: pictures,
-      attachedFileNames: attachedFileNames,
-      description,
-      majorList,
-      targetStudents,
-    });
+      const createdNotice = await Notice.create({
+        id,
+        href,
+        title,
+        author,
+        postedAt,
+        content,
+        attachedPictures: pictures,
+        attachedFileNames: attachedFileNames,
+        description,
+        majorList,
+        targetStudents,
+      });
 
-    console.log(noticeToMessage(createdNotice));
+      console.log(await noticeToMessage(createdNotice));
 
-    await sendWebHook(WEBHOOK_URL, await noticeToMessage(createdNotice));
-  });
+      await sendWebHook(WEBHOOK_URL, await noticeToMessage(createdNotice));
+    } catch (err) {
+      console.error("Error processing notice in coreLogic:", err);
+    }
+  }
 };
 
 const extractWithAI = async (notice: z.input<typeof aiInputSchema>) => {

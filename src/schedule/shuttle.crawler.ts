@@ -10,7 +10,11 @@ const getSrcsUrl = (bookCode: string) =>
 
 export const shuttleCrawler = async (sleepSec: number) => {
   while (true) {
-    await coreLogic();
+    try {
+      await coreLogic();
+    } catch (error) {
+      console.error("Error in shuttleCrawler:", error);
+    }
     await wait(sleepSec * 1000);
   }
 };
@@ -31,17 +35,21 @@ const coreLogic = async () => {
     }[]
   ).map(({ src }) => `https:${src}`);
 
-  srcs.forEach(async (src) => {
-    const findShuttle = await Shuttle.findOne({ src: src });
-    if (findShuttle) return;
+  for (const src of srcs) {
+    try {
+      const findShuttle = await Shuttle.findOne({ src: src });
+      if (findShuttle) continue;
 
-    await Shuttle.create({ src });
+      await Shuttle.create({ src });
 
-    const msg = shuttleToMessage({ src });
-    console.log(msg);
+      const msg = shuttleToMessage({ src });
+      console.log(msg);
 
-    await sendWebHook(WEBHOOK_URL, msg);
-  });
+      await sendWebHook(WEBHOOK_URL, msg);
+    } catch (err) {
+      console.error("Error processing shuttle:", err);
+    }
+  }
 };
 
 const shuttleToMessage = (shuttle: Pick<IShuttles, "src">) => {
