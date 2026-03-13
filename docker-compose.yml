@@ -6,11 +6,22 @@ services:
     env_file:
       - .env
     restart: always
+    volumes:
+      - ./src:/app/src
     depends_on:
       mongo:
         condition: service_healthy
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "autoheal=true"
 
   mongo:
     image: mongo:latest
@@ -25,6 +36,14 @@ services:
       timeout: 30s
       retries: 5
     restart: always
+
+  autoheal:
+    image: willfarrell/autoheal
+    restart: always
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   mongo_data:
