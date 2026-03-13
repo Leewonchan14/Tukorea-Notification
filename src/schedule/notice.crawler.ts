@@ -7,7 +7,6 @@ import { INotice, Notice } from "@/schema/notice.schema";
 import { convertSrcToBuffer, wait } from "@/util";
 import { ROLE_MAP } from "@/webhook";
 import * as cheerio from "cheerio";
-import { Document } from "mongoose";
 import z from "zod";
 
 const TARGET_DOMAIN = "https://www.tukorea.ac.kr";

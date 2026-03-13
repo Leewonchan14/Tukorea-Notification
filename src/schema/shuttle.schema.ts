@@ -17,7 +17,6 @@ const shuttleSchema = new Schema<IShuttles>(
     place: {
       type: String,
       enum: ["본교 ↔ 정왕역", "제2캠퍼스 ↔ 본교 ↔ 정왕역"],
-      required: true,
     },
     createdAt: {
       type: Date,
@@ -36,7 +35,7 @@ const shuttleSchema = new Schema<IShuttles>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export const Shuttle = model<IShuttles>("Shuttle", shuttleSchema);
