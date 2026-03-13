@@ -3,10 +3,10 @@ import { Document, Schema, model } from "mongoose";
 
 export interface ISchoolMeal extends Document {
   src: string;
-  place: string;
+  place?: string;
   createdAt: dayjs.Dayjs;
   updatedAt: dayjs.Dayjs;
-  rawLabel: string;
+  rawLabel?: string;
   description?: string;
 }
 
@@ -18,11 +18,9 @@ const schoolMealSchema = new Schema<ISchoolMeal>(
     },
     place: {
       type: String,
-      required: true,
     },
     rawLabel: {
       type: String,
-      required: true,
     },
     description: {
       type: String,

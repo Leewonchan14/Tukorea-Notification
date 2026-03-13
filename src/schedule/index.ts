@@ -1,5 +1,6 @@
 import { dormitoryNoticeCrawler } from "./dormitory-notice.crawler";
 import { noticeCrawler } from "./notice.crawler";
+import { schoolMealCrawler } from "./school-meal.crawler";
 import { shuttleCrawler } from "./shuttle.crawler";
 
 export const scheduleTasks = async () => {
@@ -9,18 +10,9 @@ export const scheduleTasks = async () => {
   // Dormitory Notice
   dormitoryNoticeCrawler(15 * 60); // 15분 마다
 
-  // // School Meal
-  shuttleCrawler(60 * 60); // 1시간 마다
-  // withErorrWebHook(() => schoolMealCrawler(getPage))();
-  // cron.schedule(
-  //   "6-59/30 * * * *", // 30분 마다
-  //   withErorrWebHook(() => schoolMealCrawler(getPage)),
-  // );
+  // School Meal
+  schoolMealCrawler(30 * 60); // 30분 마다
 
-  // // Shuttle
-  // withErorrWebHook(() => shuttleCrawler(getPage))();
-  // cron.schedule(
-  //   "9-59/60 * * * *", // 1시간 마다
-  //   withErorrWebHook(() => shuttleCrawler(getPage)),
-  // );
+  // Shuttle
+  shuttleCrawler(60 * 60); // 1시간 마다
 };
