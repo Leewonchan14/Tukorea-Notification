@@ -32,6 +32,7 @@ const coreLogic = async () => {
 
   const newNotices = $("a:has(span[class*='new'])")
     .get()
+    .reverse()
     .map((n) => $(n));
 
   const newNoticeIds = newNotices.map((el) => {
